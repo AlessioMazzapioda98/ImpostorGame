@@ -18,18 +18,26 @@ export type VoteMode = 'segreto' | 'palese'
 /** Cosa si sceglie all'inizio: una delle due, oppure lascia scegliere alla sorte. */
 export type VoteModeSetting = VoteMode | 'misto'
 
+/** Su cosa mette le mani un archetipo. */
+export type ArchetypeCategory = 'forma' | 'senso' | 'tavolo'
+
 export interface Archetype {
   id: string
   name: string
   /** Il vincolo, scritto rivolgendosi al giocatore. */
   rule: string
   emoji: string
+  category: ArchetypeCategory
+  /** Vero se può farti sembrare l'impostore anche quando sei innocente. */
+  trap?: boolean
 }
 
 export interface Settings {
   impostorCount: number
   packIds: string[]
   archetypesEnabled: boolean
+  /** Se falso restano solo gli archetipi che non possono farti perdere da innocente. */
+  trapsEnabled?: boolean
   /** Se falso, l'impostore vede solo "sei l'impostore", senza sapere la categoria. */
   clueForImpostors: boolean
   voteMode: VoteModeSetting

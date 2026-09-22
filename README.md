@@ -10,9 +10,10 @@ strada giusta senza consegnargliela, e ha sempre la stessa difficoltà, cosa che
 indizio scritto a mano non riesce ad avere.
 
 In più, ogni giocatore riceve un **archetipo** insieme alla propria carta: un vincolo
-sul modo in cui deve dire la sua parola (Il Poeta deve rimare, Il Minimalista non può
-superare le quattro lettere, Il Cantante deve cantare). Gli archetipi valgono per tutti,
-impostori compresi, così non tradiscono il ruolo.
+su quello che può dire al proprio turno (Il Poeta deve rimare, Il Minimalista non può
+superare le cinque lettere, Il Goloso deve parlare di cibo qualunque sia la parola
+segreta). Gli archetipi valgono per tutti, impostori compresi, così non tradiscono il
+ruolo.
 
 ## Come si avvia
 
@@ -63,8 +64,8 @@ funziona a schermo intero e anche senza connessione.
 src/game/      logica pura, senza React: stato della partita, voti, vittoria
   types.ts       i tipi condivisi
   engine.ts      creazione partita, carte, votazione, fine partita
-  words.ts       le categorie di parole con il relativo indizio
-  archetypes.ts  gli archetipi
+  words.ts       le categorie di parole: il nome della categoria è l'indizio
+  archetypes.ts  gli archetipi, con categoria e flag trap
   engine.test.ts i test della logica
 src/screens/   una schermata per ogni fase: consegna, giro, voto, esito
 src/App.tsx    tiene lo stato della partita e sceglie la schermata
@@ -73,12 +74,33 @@ src/App.tsx    tiene lo stato della partita e sceglie la schermata
 La logica sta tutta in `src/game/engine.ts` come funzioni pure che prendono uno stato
 e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
 
-## Aggiungere parole o archetipi
+## Gli archetipi
+
+Stanno in `src/game/archetypes.ts`. Nessuno di loro riguarda il tono o il modo di
+pronunciare la parola: cantare o sussurrare fa ridere per due secondi e non cambia
+niente di quello che il tavolo deve capire. Ognuno vincola la parola, il suo
+significato o il voto, e dichiara due cose oltre al testo della regola:
+
+- `category`, cioè su cosa mette le mani.
+  - `forma` vincola com'è fatta la parola, e il tavolo può verificarlo dopo (rima,
+    lunghezza, lettere, lingua).
+  - `senso` vincola cosa può significare, quindi sporca la deduzione.
+  - `tavolo` non tocca la parola, sposta il voto.
+- `trap`, vero se può farti sembrare l'impostore anche quando sei innocente.
+
+`assignArchetypes` in `src/game/engine.ts` li pesca a caso: un archetipo a testa da un
+mazzo mescolato, senza bilanciare le categorie e senza tetti. Se i giocatori superano
+gli archetipi disponibili il mazzo si rimescola, quindi qualcuno può ripetersi.
+
+Con `settings.trapsEnabled` a falso restano solo gli archetipi che complicano la parola
+senza far perdere nessuno per sbaglio. Il valore predefinito è vero.
+
+## Aggiungere parole
 
 Le parole stanno in `src/game/words.ts`, raggruppate per categoria: basta la parola,
 perché l'indizio è il nome della categoria. Gli archetipi stanno in
-`src/game/archetypes.ts`: bastano un nome, la regola scritta rivolgendosi al giocatore
-e un'emoji.
+`src/game/archetypes.ts`: servono un nome, la regola scritta rivolgendosi al giocatore,
+un'emoji, la `category` e il flag `trap`.
 
 ## Controllare il bilanciamento
 

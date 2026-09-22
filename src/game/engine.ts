@@ -1,4 +1,4 @@
-import { ARCHETYPES } from './archetypes'
+import { playableArchetypes } from './archetypes'
 import { MIN_PACKS_FOR_CLUE, WORD_PACKS } from './words'
 import type {
   Archetype,
@@ -110,12 +110,24 @@ function pickWord(packIds: string[], rng: Rng): { word: string; category: string
   return pool[Math.floor(rng() * pool.length)]
 }
 
-function assignArchetypes(players: Player[], rng: Rng): Record<PlayerId, Archetype> {
+/**
+ * Un archetipo a testa, pescati da un mazzo mescolato e basta: nessun bilanciamento
+ * fra categorie, nessun tetto alle trappole.
+ */
+function assignArchetypes(
+  order: PlayerId[],
+  rng: Rng,
+  trapsEnabled: boolean,
+): Record<PlayerId, Archetype> {
+  const available = playableArchetypes(trapsEnabled)
+  if (available.length === 0) return {}
+
   const assigned: Record<PlayerId, Archetype> = {}
-  let pool = shuffle(ARCHETYPES, rng)
-  for (const player of players) {
-    if (pool.length === 0) pool = shuffle(ARCHETYPES, rng)
-    assigned[player.id] = pool.pop() as Archetype
+  let pool = shuffle(available, rng)
+  for (const playerId of order) {
+    // Con più giocatori che archetipi si rimescola e si ricomincia.
+    if (pool.length === 0) pool = shuffle(available, rng)
+    assigned[playerId] = pool.pop() as Archetype
   }
   return assigned
 }
@@ -138,7 +150,9 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     word,
     category,
     impostorIds,
-    archetypeByPlayer: settings.archetypesEnabled ? assignArchetypes(players, rng) : {},
+    archetypeByPlayer: settings.archetypesEnabled
+      ? assignArchetypes(baseOrder, rng, settings.trapsEnabled ?? true)
+      : {},
     eliminatedIds: [],
     revealIndex: 0,
     round: 1,
