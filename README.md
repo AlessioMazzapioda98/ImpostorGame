@@ -67,9 +67,22 @@ src/game/      logica pura, senza React: stato della partita, voti, vittoria
   words.ts       le categorie di parole: il nome della categoria è l'indizio
   archetypes.ts  gli archetipi, con categoria e flag trap
   engine.test.ts i test della logica
+  bilanciamento.ts  la simulazione che controlla le regole
+src/ui/        pezzi comuni dell'interfaccia: carta segreta, passaggio del
+               telefono, conto alla rovescia, vibrazione, preferenze
 src/screens/   una schermata per ogni fase: consegna, giro, voto, esito
 src/App.tsx    tiene lo stato della partita e sceglie la schermata
 ```
+
+L'interfaccia è pensata per un telefono che gira di mano in mano: la carta segreta si
+scopre **tenendo premuto** e si richiude appena stacchi il dito, e a carta chiusa il
+contenuto non viene proprio disegnato, così non si sbircia di lato. Il pulsante per
+passare al prossimo compare solo a tempo scaduto.
+
+Le preferenze di `src/ui/preferences.ts` (tenere premuto, vibrazione) sono separate da
+`Settings`: cambiano come si usa il telefono, non le regole. Il tempo della carta non
+sta lì ma in `Settings.revealSeconds`, perché cambia quale informazione trapela dal
+tavolo.
 
 La logica sta tutta in `src/game/engine.ts` come funzioni pure che prendono uno stato
 e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
