@@ -34,6 +34,16 @@ const VOTE_MODE_ROUNDS = 20
 export const REVEAL_SECONDS = 20
 
 /**
+ * Quanto tempo si ha per dire la propria parola prima di prendere un cartellino
+ * giallo. Scaduto il tempo la parola si dice lo stesso, con comodo: il cartellino
+ * è la penalità, non il silenzio.
+ */
+export const ANSWER_SECONDS = 15
+
+/** Al secondo cartellino il giallo diventa rosso e il giocatore esce. */
+export const RED_CARD_AT = 2
+
+/**
  * Il tempo della carta è un'impostazione e non una costante perché si può spegnere,
  * ma chi la spegne deve sapere che riapre il buco: senza conto alla rovescia il
  * tempo di lettura torna a essere un indizio, e chi legge piano sembra l'impostore.
@@ -45,6 +55,22 @@ export function revealSeconds(settings: Settings): number {
 /** Vero quando il tempo di lettura può di nuovo tradire chi legge lentamente. */
 export function revealTimerIsOff(settings: Settings): boolean {
   return revealSeconds(settings) === 0
+}
+
+/**
+ * Il tempo per dire la propria parola. A zero non si prendono cartellini: il tempo
+ * per leggere la carta e il tempo per dire la parola fanno due cose opposte di
+ * proposito. Leggere è privato e non deve dire niente agli altri, quindi lì il
+ * conto alla rovescia serve a nascondere. Parlare è pubblico e fa parte del gioco,
+ * quindi lì il tempo è una penalità dichiarata invece di un sospetto sussurrato.
+ */
+export function answerSeconds(settings: Settings): number {
+  return Math.max(0, settings.answerSeconds)
+}
+
+/** Vero quando si gioca senza limite di tempo per parlare, e quindi senza cartellini. */
+export function cardsAreOff(settings: Settings): boolean {
+  return answerSeconds(settings) === 0
 }
 
 export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
@@ -147,6 +173,7 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     lastVote: null,
     guessingImpostorId: null,
     voteModeByRound: rollVoteModes(settings.voteMode, rng),
+    yellowCards: {},
     winner: null,
     endReason: null,
   }
@@ -257,6 +284,18 @@ export function applyVote(state: GameState, votes: Record<PlayerId, PlayerId>): 
   return { ...eliminated, phase: 'voteResult', lastVote: outcome }
 }
 
+/**
+ * Cosa succede dopo che un giocatore è uscito, per voto o per cartellino rosso.
+ * Le conseguenze sono le stesse: chi esce è uscito, e se era l'ultimo impostore
+ * ha comunque il suo tentativo sulla parola.
+ */
+function resolveElimination(state: GameState, eliminatedId: PlayerId): GameState {
+  if (isImpostor(state, eliminatedId) && aliveImpostors(state).length === 0) {
+    return { ...state, phase: 'guess', guessingImpostorId: eliminatedId }
+  }
+  return settleAfterElimination(state)
+}
+
 /** Dalla schermata del risultato: o l'impostore prova a indovinare, o si va avanti. */
 export function continueFromVoteResult(state: GameState): GameState {
   const outcome = state.lastVote
@@ -270,10 +309,37 @@ export function continueFromVoteResult(state: GameState): GameState {
       lastVote: null,
     }
   }
-  if (isImpostor(state, outcome.eliminatedId) && aliveImpostors(state).length === 0) {
-    return { ...state, phase: 'guess', guessingImpostorId: outcome.eliminatedId }
-  }
-  return settleAfterElimination(state)
+  return resolveElimination(state, outcome.eliminatedId)
+}
+
+/** Quanti cartellini ha preso un giocatore. */
+export function yellowCardsOf(state: GameState, playerId: PlayerId): number {
+  return state.yellowCards[playerId] ?? 0
+}
+
+/** Vero se il prossimo cartellino di questo giocatore sarebbe quello rosso. */
+export function isOnLastWarning(state: GameState, playerId: PlayerId): boolean {
+  return yellowCardsOf(state, playerId) === RED_CARD_AT - 1
+}
+
+/**
+ * Dà un cartellino a chi non ha detto la parola in tempo. Il secondo è rosso e porta
+ * fuori il giocatore, con le stesse conseguenze di un'eliminazione per voto.
+ *
+ * Attenzione a quanto stretto si mette il tempo: l'impostore la parola se la deve
+ * inventare partendo da un indizio, quindi ci mette di più, e un tempo corto lo
+ * manda fuori da solo senza che il tavolo debba indovinare niente. Vale anche al
+ * contrario per un innocente a cui è toccato un archetipo difficile.
+ */
+export function giveYellowCard(state: GameState, playerId: PlayerId): GameState {
+  if (state.eliminatedIds.includes(playerId)) return state
+  const cards = yellowCardsOf(state, playerId) + 1
+  const withCard = { ...state, yellowCards: { ...state.yellowCards, [playerId]: cards } }
+  if (cards < RED_CARD_AT) return withCard
+  return resolveElimination(
+    { ...withCard, eliminatedIds: [...withCard.eliminatedIds, playerId] },
+    playerId,
+  )
 }
 
 export function normalizeGuess(text: string): string {

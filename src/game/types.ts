@@ -35,6 +35,11 @@ export interface Settings {
   voteMode: VoteModeSetting
   /** Secondi per cui resta aperta la carta, uguali per tutti. Zero spegne il timer. */
   revealSeconds: number
+  /**
+   * Secondi per dire la propria parola prima di prendere un cartellino giallo.
+   * Zero toglie il limite di tempo e quindi anche i cartellini.
+   */
+  answerSeconds: number
 }
 
 /** Quello che un singolo giocatore legge quando gli passano il telefono. */
@@ -91,6 +96,8 @@ export interface GameState {
   guessingImpostorId: PlayerId | null
   /** Come si vota, giro per giro: estratto a inizio partita quando è "misto". */
   voteModeByRound: VoteMode[]
+  /** Quanti cartellini gialli ha preso ciascun giocatore, da inizio partita. */
+  yellowCards: Record<PlayerId, number>
   winner: Winner | null
   /** Perché la partita è finita, in una frase. */
   endReason: string | null
