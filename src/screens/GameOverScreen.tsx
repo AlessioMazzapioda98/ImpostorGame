@@ -1,5 +1,8 @@
 import { isImpostor } from '../game/engine'
 import type { GameState } from '../game/types'
+import { Avatar } from '../ui/Avatar'
+import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
+import { vibra } from '../ui/haptics'
 
 interface Props {
   state: GameState
@@ -8,60 +11,65 @@ interface Props {
 }
 
 export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
-  const impostorsWon = state.winner === 'impostors'
+  const vinconoImpostori = state.winner === 'impostors'
 
   return (
-    <div className="stack-lg">
-      <header className="stack center">
-        <p className="outcome">{impostorsWon ? '🕵️' : '🎉'}</p>
-        <h1>{impostorsWon ? 'Vincono gli impostori' : 'Vincono i giocatori'}</h1>
-        {state.endReason && <p className="muted">{state.endReason}</p>}
-      </header>
+    <Screen>
+      <ScreenBody>
+        <header className={vinconoImpostori ? 'finale finale-impostori' : 'finale finale-innocenti'}>
+          <p className="outcome">{vinconoImpostori ? '🕵️' : '🎉'}</p>
+          <h1>{vinconoImpostori ? 'Vincono gli impostori' : 'Vincono i giocatori'}</h1>
+          {state.endReason && <p className="muted">{state.endReason}</p>}
+        </header>
 
-      <div className="secret">
-        <p className="eyebrow">La parola era</p>
-        <p className="secret-word">{state.entry.word}</p>
-        <p className="muted" style={{ marginTop: 10 }}>
-          Indizio degli impostori: {state.entry.clue}
-        </p>
-      </div>
+        <div className="rivelazione-finale">
+          <p className="eyebrow">La parola era</p>
+          <p className="segreto-parola">{state.entry.word}</p>
+          <p className="muted">Indizio degli impostori: {state.entry.clue}</p>
+        </div>
 
-      <div className="card stack">
-        <p className="eyebrow">Come stavano le cose</p>
-        {state.players.map((player) => {
-          const impostor = isImpostor(state, player.id)
-          const out = state.eliminatedIds.includes(player.id)
-          const archetype = state.archetypeByPlayer[player.id]
-          return (
-            <div key={player.id} className="recap-row">
-              <span className="name">
-                {player.name}
-                {archetype && (
-                  <>
-                    <br />
-                    <span className="muted">
-                      {archetype.emoji} {archetype.name}
+        <div className="card stack">
+          <p className="eyebrow">Come stavano le cose</p>
+          {state.players.map((player) => {
+            const impostore = isImpostor(state, player.id)
+            const eliminato = state.eliminatedIds.includes(player.id)
+            const archetipo = state.archetypeByPlayer[player.id]
+            return (
+              <div key={player.id} className="recap-row">
+                <Avatar nome={player.name} dimensione="sm" spento={eliminato} />
+                <span className="name">
+                  {player.name}
+                  {archetipo && (
+                    <span className="recap-archetipo">
+                      {archetipo.emoji} {archetipo.name}
                     </span>
-                  </>
-                )}
-              </span>
-              {out && <span className="badge badge-out">eliminato</span>}
-              <span className={impostor ? 'badge badge-impostor' : 'badge badge-crew'}>
-                {impostor ? 'impostore' : 'innocente'}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+                  )}
+                </span>
+                {eliminato && <span className="badge badge-out">eliminato</span>}
+                <span className={impostore ? 'badge badge-impostor' : 'badge badge-crew'}>
+                  {impostore ? 'impostore' : 'innocente'}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </ScreenBody>
 
-      <div className="stack">
-        <button type="button" className="btn" onClick={onPlayAgain}>
+      <ScreenActions>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            vibra('conferma')
+            onPlayAgain()
+          }}
+        >
           Un'altra partita, stessi giocatori
         </button>
         <button type="button" className="btn btn-secondary" onClick={onNewGame}>
           Cambia giocatori e impostazioni
         </button>
-      </div>
-    </div>
+      </ScreenActions>
+    </Screen>
   )
 }

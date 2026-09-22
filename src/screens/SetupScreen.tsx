@@ -1,202 +1,260 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { MAX_PLAYERS, MIN_PLAYERS, maxImpostors } from '../game/engine'
 import { WORD_PACKS } from '../game/words'
 import type { Player, Settings } from '../game/types'
+import type { UiPrefs } from '../ui/preferences'
+import { Avatar } from '../ui/Avatar'
+import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
+import { vibra } from '../ui/haptics'
 
 interface Props {
   players: Player[]
   settings: Settings
+  uiPrefs: UiPrefs
   onPlayersChange: (players: Player[]) => void
   onSettingsChange: (settings: Settings) => void
+  onUiPrefsChange: (prefs: UiPrefs) => void
   onStart: () => void
 }
 
-let nextId = 0
-function makePlayer(name: string): Player {
-  nextId += 1
-  return { id: `p${Date.now().toString(36)}${nextId}`, name }
+let progressivo = 0
+function creaGiocatore(name: string): Player {
+  progressivo += 1
+  return { id: `p${Date.now().toString(36)}${progressivo}`, name }
 }
 
 export function SetupScreen({
   players,
   settings,
+  uiPrefs,
   onPlayersChange,
   onSettingsChange,
+  onUiPrefsChange,
   onStart,
 }: Props) {
-  const [draft, setDraft] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [bozza, setBozza] = useState('')
+  const [errore, setErrore] = useState<string | null>(null)
+  const campo = useRef<HTMLInputElement>(null)
 
-  const addPlayer = () => {
-    const name = draft.trim()
+  const aggiungi = () => {
+    const name = bozza.trim()
     if (!name) return
     if (players.length >= MAX_PLAYERS) {
-      setError(`Al massimo ${MAX_PLAYERS} giocatori.`)
+      setErrore(`Al massimo ${MAX_PLAYERS} giocatori.`)
       return
     }
     if (players.some((player) => player.name.toLowerCase() === name.toLowerCase())) {
-      setError("C'è già un giocatore con questo nome.")
+      setErrore("C'è già un giocatore con questo nome.")
       return
     }
-    onPlayersChange([...players, makePlayer(name)])
-    setDraft('')
-    setError(null)
+    onPlayersChange([...players, creaGiocatore(name)])
+    setBozza('')
+    setErrore(null)
+    vibra('tocco')
+    // Si aggiungono più nomi di fila: la tastiera deve restare aperta.
+    campo.current?.focus()
   }
 
-  const removePlayer = (id: string) => {
+  const togli = (id: string) => {
     onPlayersChange(players.filter((player) => player.id !== id))
-    setError(null)
+    setErrore(null)
   }
 
-  const togglePack = (packId: string) => {
+  const cambiaCategoria = (packId: string) => {
     const packIds = settings.packIds.includes(packId)
       ? settings.packIds.filter((id) => id !== packId)
       : [...settings.packIds, packId]
     if (packIds.length === 0) return
+    vibra('tocco')
     onSettingsChange({ ...settings, packIds })
   }
 
-  const limit = maxImpostors(players.length)
-  const impostorChoices = Array.from({ length: Math.max(1, limit) }, (_, i) => i + 1)
-  const enoughPlayers = players.length >= MIN_PLAYERS
+  const limite = maxImpostors(players.length)
+  const scelteImpostori = Array.from({ length: Math.max(1, limite) }, (_, i) => i + 1)
+  const abbastanza = players.length >= MIN_PLAYERS
 
   return (
-    <div className="stack-lg">
-      <header className="stack">
-        <h1>Impostor</h1>
-        <p className="muted">
-          Un solo telefono, che gira di mano in mano. Tutti leggono la parola segreta tranne gli
-          impostori, che ricevono solo un indizio.
-        </p>
-      </header>
+    <Screen>
+      <ScreenBody>
+        <header className="stack titolo">
+          <h1 className="logo">Impostor</h1>
+          <p className="muted">
+            Un solo telefono che gira di mano in mano. Tutti leggono la parola segreta tranne gli
+            impostori, che ricevono solo un indizio.
+          </p>
+        </header>
 
-      <section className="card stack">
-        <div className="row">
-          <h2 className="grow">Giocatori</h2>
-          <span className="progress">{players.length}</span>
-        </div>
+        <section className="card stack">
+          <div className="row">
+            <h2 className="grow">Giocatori</h2>
+            <span className="progress">
+              {players.length} / {MAX_PLAYERS}
+            </span>
+          </div>
 
-        <div className="row">
-          <input
-            type="text"
-            value={draft}
-            placeholder="Nome del giocatore"
-            autoComplete="off"
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') addPlayer()
-            }}
-          />
-          <button
-            type="button"
-            className="btn"
-            style={{ width: 'auto', padding: '14px 18px' }}
-            onClick={addPlayer}
-          >
-            Aggiungi
-          </button>
-        </div>
-        {error && <p className="error">{error}</p>}
+          <div className="row">
+            <input
+              ref={campo}
+              type="text"
+              value={bozza}
+              placeholder="Nome del giocatore"
+              autoComplete="off"
+              autoCorrect="off"
+              enterKeyHint="done"
+              onChange={(event) => setBozza(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') aggiungi()
+              }}
+            />
+            <button type="button" className="btn btn-inline" onClick={aggiungi}>
+              Aggiungi
+            </button>
+          </div>
+          {errore && <p className="error">{errore}</p>}
 
-        <div className="stack">
-          {players.map((player) => (
-            <div key={player.id} className="player-row">
-              <span>{player.name}</span>
+          <div className="stack">
+            {players.map((player) => (
+              <div key={player.id} className="player-row">
+                <Avatar nome={player.name} dimensione="sm" />
+                <span className="player-nome">{player.name}</span>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={`Togli ${player.name}`}
+                  onClick={() => togli(player.id)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {players.length === 0 && (
+              <p className="muted">Aggiungi almeno {MIN_PLAYERS} giocatori per cominciare.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="card stack">
+          <h2>Impostori</h2>
+          <div className="chips">
+            {scelteImpostori.map((quanti) => (
               <button
+                key={quanti}
                 type="button"
-                className="icon-btn"
-                aria-label={`Togli ${player.name}`}
-                onClick={() => removePlayer(player.id)}
+                className="chip"
+                aria-pressed={settings.impostorCount === quanti}
+                onClick={() => {
+                  vibra('tocco')
+                  onSettingsChange({ ...settings, impostorCount: quanti })
+                }}
               >
-                ✕
+                {quanti}
               </button>
-            </div>
-          ))}
-          {players.length === 0 && (
-            <p className="muted">Aggiungi almeno {MIN_PLAYERS} giocatori per cominciare.</p>
-          )}
-        </div>
-      </section>
+            ))}
+          </div>
+          <p className="muted">
+            Con {players.length || '—'} giocatori puoi arrivare a {limite}{' '}
+            {limite === 1 ? 'impostore' : 'impostori'}.
+          </p>
+        </section>
 
-      <section className="card stack">
-        <h2>Impostori</h2>
-        <div className="chips">
-          {impostorChoices.map((count) => (
-            <button
-              key={count}
-              type="button"
-              className="chip"
-              aria-pressed={settings.impostorCount === count}
-              onClick={() => onSettingsChange({ ...settings, impostorCount: count })}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
-        <p className="muted">
-          Con {players.length || '—'} giocatori puoi arrivare a {limit}{' '}
-          {limit === 1 ? 'impostore' : 'impostori'}.
-        </p>
-      </section>
+        <section className="card stack">
+          <h2>Categorie</h2>
+          <div className="chips">
+            {WORD_PACKS.map((pack) => (
+              <button
+                key={pack.id}
+                type="button"
+                className="chip"
+                aria-pressed={settings.packIds.includes(pack.id)}
+                onClick={() => cambiaCategoria(pack.id)}
+              >
+                {pack.name}
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <section className="card stack">
-        <h2>Categorie</h2>
-        <div className="chips">
-          {WORD_PACKS.map((pack) => (
-            <button
-              key={pack.id}
-              type="button"
-              className="chip"
-              aria-pressed={settings.packIds.includes(pack.id)}
-              onClick={() => togglePack(pack.id)}
-            >
-              {pack.name}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="stack">
-        <button
-          type="button"
-          className="toggle"
-          aria-pressed={settings.archetypesEnabled}
-          onClick={() =>
+        <Interruttore
+          acceso={settings.archetypesEnabled}
+          titolo="Archetipi"
+          nota="Ogni giocatore riceve un ruolo che lo obbliga a parlare in un certo modo."
+          onCambia={() =>
             onSettingsChange({ ...settings, archetypesEnabled: !settings.archetypesEnabled })
           }
-        >
-          <span className="toggle-mark">{settings.archetypesEnabled ? '✓' : ''}</span>
-          <span>
-            <strong>Archetipi</strong>
-            <br />
-            <span className="muted">
-              Ogni giocatore riceve un ruolo che lo obbliga a parlare in un certo modo.
-            </span>
-          </span>
-        </button>
+        />
 
+        <details className="altre">
+          <summary>Altre impostazioni</summary>
+          <div className="stack">
+            <Interruttore
+              acceso={settings.clueForImpostors}
+              titolo="Indizio per gli impostori"
+              nota="Spegnilo per una partita più difficile: gli impostori non sapranno nulla."
+              onCambia={() =>
+                onSettingsChange({ ...settings, clueForImpostors: !settings.clueForImpostors })
+              }
+            />
+            <Interruttore
+              acceso={uiPrefs.tieniPremuto}
+              titolo="Scopri tenendo premuto"
+              nota="La carta resta visibile solo finché tieni il dito sullo schermo. Spegnilo per aprirla e chiuderla con un tocco."
+              onCambia={() => onUiPrefsChange({ ...uiPrefs, tieniPremuto: !uiPrefs.tieniPremuto })}
+            />
+            <Interruttore
+              acceso={uiPrefs.vibrazioni}
+              titolo="Vibrazione"
+              nota="Un colpetto quando scopri la carta, confermi un voto o arriva un verdetto."
+              onCambia={() => onUiPrefsChange({ ...uiPrefs, vibrazioni: !uiPrefs.vibrazioni })}
+            />
+          </div>
+        </details>
+      </ScreenBody>
+
+      <ScreenActions>
         <button
           type="button"
-          className="toggle"
-          aria-pressed={settings.clueForImpostors}
-          onClick={() =>
-            onSettingsChange({ ...settings, clueForImpostors: !settings.clueForImpostors })
-          }
+          className="btn"
+          disabled={!abbastanza}
+          onClick={() => {
+            vibra('conferma')
+            onStart()
+          }}
         >
-          <span className="toggle-mark">{settings.clueForImpostors ? '✓' : ''}</span>
-          <span>
-            <strong>Indizio per gli impostori</strong>
-            <br />
-            <span className="muted">
-              Spegnilo per una partita più difficile: gli impostori non sapranno nulla.
-            </span>
-          </span>
+          {abbastanza ? 'Comincia la partita' : `Servono almeno ${MIN_PLAYERS} giocatori`}
         </button>
-      </section>
+      </ScreenActions>
+    </Screen>
+  )
+}
 
-      <button type="button" className="btn" disabled={!enoughPlayers} onClick={onStart}>
-        {enoughPlayers ? 'Comincia la partita' : `Servono almeno ${MIN_PLAYERS} giocatori`}
-      </button>
-    </div>
+function Interruttore({
+  acceso,
+  titolo,
+  nota,
+  onCambia,
+}: {
+  acceso: boolean
+  titolo: string
+  nota: string
+  onCambia: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className="toggle"
+      aria-pressed={acceso}
+      onClick={() => {
+        vibra('tocco')
+        onCambia()
+      }}
+    >
+      <span className="toggle-mark" aria-hidden="true">
+        {acceso ? '✓' : ''}
+      </span>
+      <span className="toggle-testo">
+        <strong>{titolo}</strong>
+        <span className="muted">{nota}</span>
+      </span>
+    </button>
   )
 }

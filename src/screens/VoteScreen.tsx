@@ -1,78 +1,118 @@
 import { useState } from 'react'
 import { alivePlayers } from '../game/engine'
 import type { GameState, PlayerId } from '../game/types'
+import { Avatar } from '../ui/Avatar'
+import { Handoff } from '../ui/Handoff'
+import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
+import { vibra } from '../ui/haptics'
+
+/**
+ * Come si raccoglie il voto. Cambia solo il modo di usare il telefono, non il
+ * conteggio: in entrambi i casi l'app consegna lo stesso elenco di voti.
+ * - segreto: il telefono gira e ognuno vota da solo, coperto.
+ * - palese: il telefono resta in mezzo e si vota davanti a tutti.
+ */
+export type ModalitaVoto = 'segreto' | 'palese'
 
 interface Props {
   state: GameState
+  modalita?: ModalitaVoto
   onDone: (votes: Record<PlayerId, PlayerId>) => void
 }
 
-export function VoteScreen({ state, onDone }: Props) {
+export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
   const voters = alivePlayers(state)
   const [voterIndex, setVoterIndex] = useState(0)
-  const [handedOver, setHandedOver] = useState(false)
-  const [choice, setChoice] = useState<PlayerId | null>(null)
+  const [consegnato, setConsegnato] = useState(false)
+  const [scelta, setScelta] = useState<PlayerId | null>(null)
   const [votes, setVotes] = useState<Record<PlayerId, PlayerId>>({})
 
+  const segreto = modalita === 'segreto'
   const voter = voters[voterIndex]
+  const passo = `Voto ${voterIndex + 1} di ${voters.length}`
 
-  const confirm = () => {
-    if (!choice) return
-    const nextVotes = { ...votes, [voter.id]: choice }
-    setVotes(nextVotes)
-    setChoice(null)
-    setHandedOver(false)
+  const conferma = () => {
+    if (!scelta) return
+    vibra('conferma')
+    const nuoviVoti = { ...votes, [voter.id]: scelta }
+    setVotes(nuoviVoti)
+    setScelta(null)
+    setConsegnato(false)
     if (voterIndex === voters.length - 1) {
-      onDone(nextVotes)
+      onDone(nuoviVoti)
       return
     }
     setVoterIndex(voterIndex + 1)
   }
 
-  if (!handedOver) {
+  // Nel voto palese il telefono non gira: si salta la schermata di passaggio.
+  if (segreto && !consegnato) {
     return (
-      <div className="stack-lg grow" style={{ justifyContent: 'center' }}>
-        <div className="center stack">
-          <p className="eyebrow">
-            Voto {voterIndex + 1} di {voters.length}
-          </p>
-          <h1>Passa il telefono a {voter.name}</h1>
-          <p className="muted">Il voto è segreto: gli altri non devono vedere lo schermo.</p>
-        </div>
-        <button type="button" className="btn" onClick={() => setHandedOver(true)}>
-          Sono {voter.name}, vota
-        </button>
-      </div>
+      <Handoff
+        nome={voter.name}
+        passo={passo}
+        nota="Il voto è segreto: copri lo schermo con la mano mentre scegli."
+        azione="vota"
+        onPronto={() => setConsegnato(true)}
+      />
     )
   }
 
   return (
-    <div className="stack-lg">
-      <header className="stack">
-        <p className="eyebrow">{voter.name}, tocca a te</p>
-        <h1>Chi è l'impostore?</h1>
-      </header>
+    <Screen>
+      <ScreenBody>
+        <div className="giro-testa">
+          <span className={segreto ? 'modo modo-segreto' : 'modo modo-palese'}>
+            {segreto ? '🤫 Voto segreto' : '👀 Voto palese'}
+          </span>
+          <span className="progress">{passo}</span>
+        </div>
 
-      <div className="stack">
-        {voters
-          .filter((player) => player.id !== voter.id)
-          .map((player) => (
-            <button
-              key={player.id}
-              type="button"
-              className="vote-option"
-              aria-pressed={choice === player.id}
-              onClick={() => setChoice(player.id)}
-            >
-              <span>{player.name}</span>
-              {choice === player.id && <span>✓</span>}
-            </button>
-          ))}
-      </div>
+        <div className="voto-testa">
+          <Avatar nome={voter.name} dimensione="md" />
+          <div>
+            <h1>Chi è l'impostore?</h1>
+            <p className="muted">
+              {segreto
+                ? `${voter.name}, scegli e conferma. Nessuno vedrà il tuo voto.`
+                : `${voter.name}, scegli davanti a tutti. Questo voto è di tutti.`}
+            </p>
+          </div>
+        </div>
 
-      <button type="button" className="btn" disabled={!choice} onClick={confirm}>
-        Conferma il voto
-      </button>
-    </div>
+        <div className="stack">
+          {voters
+            .filter((player) => player.id !== voter.id)
+            .map((player) => (
+              <button
+                key={player.id}
+                type="button"
+                className="vote-option"
+                aria-pressed={scelta === player.id}
+                onClick={() => {
+                  vibra('tocco')
+                  setScelta(player.id)
+                }}
+              >
+                <Avatar nome={player.name} dimensione="sm" />
+                <span className="vote-nome">{player.name}</span>
+                <span className="vote-segno" aria-hidden="true">
+                  {scelta === player.id ? '✓' : ''}
+                </span>
+              </button>
+            ))}
+        </div>
+      </ScreenBody>
+
+      <ScreenActions>
+        <button type="button" className="btn" disabled={!scelta} onClick={conferma}>
+          {!scelta
+            ? 'Scegli chi votare'
+            : segreto
+              ? 'Conferma e passa il telefono'
+              : 'Conferma il voto'}
+        </button>
+      </ScreenActions>
+    </Screen>
   )
 }

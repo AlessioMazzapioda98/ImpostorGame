@@ -16,6 +16,11 @@ import { VoteScreen } from './screens/VoteScreen'
 import { VoteResultScreen } from './screens/VoteResultScreen'
 import { GuessScreen } from './screens/GuessScreen'
 import { GameOverScreen } from './screens/GameOverScreen'
+import { Conferma } from './ui/Conferma'
+import { TopBar } from './ui/TopBar'
+import { caricaUiPrefs, salvaUiPrefs, type UiPrefs } from './ui/preferences'
+import { impostaVibrazioni } from './ui/haptics'
+import { useKeepAwake } from './ui/useKeepAwake'
 
 const STORAGE_KEY = 'impostor-setup-v1'
 
@@ -45,7 +50,9 @@ export function App() {
   const [saved] = useState(loadSetup)
   const [players, setPlayers] = useState<Player[]>(saved.players)
   const [settings, setSettings] = useState<Settings>(saved.settings)
+  const [uiPrefs, setUiPrefs] = useState<UiPrefs>(caricaUiPrefs)
   const [game, setGame] = useState<GameState | null>(null)
+  const [chiedeUscita, setChiedeUscita] = useState(false)
 
   useEffect(() => {
     try {
@@ -55,6 +62,14 @@ export function App() {
     }
   }, [players, settings])
 
+  useEffect(() => {
+    salvaUiPrefs(uiPrefs)
+    impostaVibrazioni(uiPrefs.vibrazioni)
+  }, [uiPrefs])
+
+  // A partita in corso lo schermo non deve spegnersi mentre si discute.
+  useKeepAwake(game !== null)
+
   const start = () => setGame(createGame(players, settings))
 
   if (!game) {
@@ -63,8 +78,10 @@ export function App() {
         <SetupScreen
           players={players}
           settings={settings}
+          uiPrefs={uiPrefs}
           onPlayersChange={setPlayers}
           onSettingsChange={setSettings}
+          onUiPrefsChange={setUiPrefs}
           onStart={start}
         />
       </div>
@@ -73,23 +90,49 @@ export function App() {
 
   const handleVotes = (votes: Record<PlayerId, PlayerId>) => setGame(applyVote(game, votes))
 
+  // La chiave fa ripartire l'animazione a ogni schermata nuova e, in consegna,
+  // a ogni giocatore: così il passaggio del telefono si vede anche da lontano.
+  const chiave = game.phase === 'reveal' ? `reveal-${game.revealIndex}` : game.phase
+
   return (
     <div className="app">
-      {game.phase === 'reveal' && (
-        <RevealScreen state={game} onNext={() => setGame(advanceReveal(game))} />
-      )}
-      {game.phase === 'round' && (
-        <RoundScreen state={game} onVote={() => setGame(startVote(game))} />
-      )}
-      {game.phase === 'vote' && <VoteScreen state={game} onDone={handleVotes} />}
-      {game.phase === 'voteResult' && (
-        <VoteResultScreen state={game} onContinue={() => setGame(continueFromVoteResult(game))} />
-      )}
-      {game.phase === 'guess' && (
-        <GuessScreen state={game} onGuess={(guess) => setGame(submitGuess(game, guess))} />
-      )}
-      {game.phase === 'gameOver' && (
-        <GameOverScreen state={game} onPlayAgain={start} onNewGame={() => setGame(null)} />
+      <TopBar state={game} onEsci={() => setChiedeUscita(true)} />
+
+      <div key={chiave} className="transizione">
+        {game.phase === 'reveal' && (
+          <RevealScreen
+            state={game}
+            tieniPremuto={uiPrefs.tieniPremuto}
+            onNext={() => setGame(advanceReveal(game))}
+          />
+        )}
+        {game.phase === 'round' && (
+          <RoundScreen state={game} onVote={() => setGame(startVote(game))} />
+        )}
+        {game.phase === 'vote' && <VoteScreen state={game} onDone={handleVotes} />}
+        {game.phase === 'voteResult' && (
+          <VoteResultScreen state={game} onContinue={() => setGame(continueFromVoteResult(game))} />
+        )}
+        {game.phase === 'guess' && (
+          <GuessScreen state={game} onGuess={(guess) => setGame(submitGuess(game, guess))} />
+        )}
+        {game.phase === 'gameOver' && (
+          <GameOverScreen state={game} onPlayAgain={start} onNewGame={() => setGame(null)} />
+        )}
+      </div>
+
+      {chiedeUscita && (
+        <Conferma
+          titolo="Chiudere la partita?"
+          testo="Il giro in corso va perso, ma i giocatori e le impostazioni restano al loro posto."
+          conferma="Sì, chiudi la partita"
+          annulla="No, torno a giocare"
+          onConferma={() => {
+            setChiedeUscita(false)
+            setGame(null)
+          }}
+          onAnnulla={() => setChiedeUscita(false)}
+        />
       )}
     </div>
   )
