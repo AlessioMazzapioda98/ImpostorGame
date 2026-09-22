@@ -1023,3 +1023,29 @@ input[type='text']:focus {
   font-size: 26px;
   margin-bottom: 4px;
 }
+
+/* Il promemoria dell'archetipo al momento del voto: discreto, perché non deve
+   rubare la scena all'elenco dei nomi da votare. */
+.promemoria {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  border: 1px dashed var(--border-forte);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promemoria-nome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.promemoria-regola {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}

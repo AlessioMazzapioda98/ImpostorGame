@@ -29,6 +29,10 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
 
   const segreto = modalita === 'segreto'
   const voter = voters[voterIndex]
+  // Alcuni archetipi vincolano chi puoi votare, non solo la parola che dici:
+  // vanno riletti qui, non solo sulla carta di inizio partita. Solo nel voto
+  // segreto, però, perché in quello palese lo leggerebbe tutto il tavolo.
+  const archetipo = segreto ? state.archetypeByPlayer[voter.id] : undefined
   const passo = `Voto ${voterIndex + 1} di ${voters.length}`
 
   const conferma = () => {
@@ -79,6 +83,17 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
             </p>
           </div>
         </div>
+
+        {archetipo && (
+          <div className="promemoria">
+            <p className="eyebrow">Ricorda il tuo archetipo</p>
+            <p className="promemoria-nome">
+              <span className="archetipo-emoji">{archetipo.emoji}</span>
+              {archetipo.name}
+            </p>
+            <p className="promemoria-regola">{archetipo.rule}</p>
+          </div>
+        )}
 
         <div className="stack">
           {voters
