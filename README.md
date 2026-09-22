@@ -1,0 +1,60 @@
+# Impostor Game
+
+Party game da giocare passandosi un solo telefono. Tutti leggono la parola segreta
+tranne gli impostori, che ricevono un indizio e i nomi degli altri impostori. A turno
+ognuno dice una parola collegata, poi si vota. L'impostore che viene scoperto ha
+un'ultima occasione: se indovina la parola, vincono gli impostori.
+
+In più, ogni giocatore riceve un **archetipo** insieme alla propria carta: un vincolo
+sul modo in cui deve dire la sua parola (Il Poeta deve rimare, Il Minimalista non può
+superare le quattro lettere, Il Cantante deve cantare). Gli archetipi valgono per tutti,
+impostori compresi, così non tradiscono il ruolo.
+
+## Come si avvia
+
+Serve Node 20 o superiore.
+
+```bash
+npm install
+npm run dev      # apre l'app in sviluppo su http://localhost:5173
+npm run build    # compila la versione di produzione in dist/
+npm run preview  # prova la versione compilata
+npm test         # esegue i test della logica di gioco
+```
+
+L'app è una PWA: aperta dal telefono si può aggiungere alla schermata home e da lì
+funziona a schermo intero e anche senza connessione.
+
+## Regole applicate dall'app
+
+- Da 3 a 12 giocatori, con un numero di impostori sempre inferiore alla metà.
+- Le carte si consegnano una alla volta, con una schermata di copertura tra un
+  giocatore e l'altro.
+- Il voto è segreto: il telefono gira di nuovo e ognuno sceglie il proprio sospetto.
+- In caso di pareggio non viene eliminato nessuno e si passa al giro successivo.
+- Vincono i giocatori normali quando cade l'ultimo impostore.
+- Vincono gli impostori se un impostore eliminato indovina la parola, oppure se
+  restano in numero pari ai giocatori normali.
+
+## Com'è fatto
+
+```
+src/game/      logica pura, senza React: stato della partita, voti, vittoria
+  types.ts       i tipi condivisi
+  engine.ts      creazione partita, carte, votazione, fine partita
+  words.ts       le categorie di parole con il relativo indizio
+  archetypes.ts  gli archetipi
+  engine.test.ts i test della logica
+src/screens/   una schermata per ogni fase: consegna, giro, voto, esito
+src/App.tsx    tiene lo stato della partita e sceglie la schermata
+```
+
+La logica sta tutta in `src/game/engine.ts` come funzioni pure che prendono uno stato
+e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
+
+## Aggiungere parole o archetipi
+
+Le parole stanno in `src/game/words.ts`, raggruppate per categoria: ogni voce ha la
+parola e l'indizio che leggerà l'impostore. Gli archetipi stanno in
+`src/game/archetypes.ts`: bastano un nome, la regola scritta rivolgendosi al giocatore
+e un'emoji.
