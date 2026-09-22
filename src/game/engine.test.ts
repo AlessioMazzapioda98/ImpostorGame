@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_PLAYERS,
+  MIN_PLAYERS,
   alivePlayers,
   applyVote,
   continueFromVoteResult,
@@ -9,7 +11,10 @@ import {
   maxImpostors,
   roleFor,
   submitGuess,
+  suggestedImpostors,
   turnOrderForRound,
+  clueIsUseful,
+  voteModeForRound,
 } from './engine'
 import type { Player, Settings } from './types'
 
@@ -23,6 +28,7 @@ const SETTINGS: Settings = {
   packIds: ['cibo'],
   archetypesEnabled: true,
   clueForImpostors: true,
+  voteMode: 'misto',
 }
 
 /** Random prevedibile, così le partite di prova sono sempre identiche. */
@@ -46,10 +52,20 @@ describe('creazione della partita', () => {
   })
 
   it('non assegna mai metà o più dei giocatori come impostori', () => {
-    for (let count = 3; count <= 12; count++) {
+    for (let count = MIN_PLAYERS; count <= MAX_PLAYERS; count++) {
       expect(maxImpostors(count)).toBeLessThan(count / 2)
       expect(maxImpostors(count)).toBeGreaterThanOrEqual(1)
     }
+  })
+
+  it('consiglia un numero di impostori che non supera mai il massimo', () => {
+    for (let count = MIN_PLAYERS; count <= MAX_PLAYERS; count++) {
+      expect(suggestedImpostors(count)).toBeLessThanOrEqual(maxImpostors(count))
+      expect(suggestedImpostors(count)).toBeGreaterThanOrEqual(1)
+    }
+    expect(suggestedImpostors(6)).toBe(1)
+    expect(suggestedImpostors(9)).toBe(2)
+    expect(suggestedImpostors(12)).toBe(2)
   })
 
   it('riduce gli impostori se ne sono stati chiesti troppi', () => {
@@ -76,11 +92,11 @@ describe('la carta di ogni giocatore', () => {
 
     const impostorRole = roleFor(state, impostorId)
     expect(impostorRole.word).toBeNull()
-    expect(impostorRole.clue).toBe(state.entry.clue)
+    expect(impostorRole.category).toBe(state.category)
 
     const crewRole = roleFor(state, crewId)
-    expect(crewRole.word).toBe(state.entry.word)
-    expect(crewRole.clue).toBeNull()
+    expect(crewRole.word).toBe(state.word)
+    expect(crewRole.category).toBeNull()
   })
 
   it('mostra a un impostore chi sono gli altri impostori, e solo a lui', () => {
@@ -96,7 +112,7 @@ describe('la carta di ogni giocatore', () => {
 
   it("nasconde l'indizio quando l'impostazione è spenta", () => {
     const state = createGame(PLAYERS, { ...SETTINGS, clueForImpostors: false }, seeded(7))
-    expect(roleFor(state, state.impostorIds[0]).clue).toBeNull()
+    expect(roleFor(state, state.impostorIds[0]).category).toBeNull()
   })
 })
 
@@ -122,12 +138,27 @@ describe('votazione', () => {
     expect(next.round).toBe(2)
   })
 
-  it('manda al tentativo di indovinare quando esce un impostore', () => {
+  it('non fa tentare il primo impostore scoperto se ne restano altri in gioco', () => {
     const state = newGame()
     const impostorId = state.impostorIds[0]
     const voted = applyVote(state, Object.fromEntries(PLAYERS.map((p) => [p.id, impostorId])))
     expect(voted.eliminatedIds).toContain(impostorId)
-    expect(continueFromVoteResult(voted).phase).toBe('guess')
+    expect(continueFromVoteResult(voted).phase).toBe('round')
+  })
+
+  it("manda al tentativo quando cade l'ultimo impostore rimasto", () => {
+    let state = newGame()
+    const [first, second] = state.impostorIds
+    state = continueFromVoteResult(
+      applyVote(state, Object.fromEntries(alivePlayers(state).map((p) => [p.id, first]))),
+    )
+    const last = applyVote(
+      state,
+      Object.fromEntries(alivePlayers(state).map((p) => [p.id, second])),
+    )
+    const next = continueFromVoteResult(last)
+    expect(next.phase).toBe('guess')
+    expect(next.guessingImpostorId).toBe(second)
   })
 
   it('torna a giocare quando viene eliminato un giocatore normale', () => {
@@ -141,19 +172,20 @@ describe('votazione', () => {
 })
 
 describe('fine della partita', () => {
-  it("gli impostori vincono se l'eliminato indovina la parola", () => {
-    const state = newGame()
+  it("gli impostori vincono se l'ultimo scoperto indovina la parola", () => {
+    let state = createGame(PLAYERS, { ...SETTINGS, impostorCount: 1 }, seeded(7))
     const impostorId = state.impostorIds[0]
     const voted = applyVote(state, Object.fromEntries(PLAYERS.map((p) => [p.id, impostorId])))
     const guessing = continueFromVoteResult(voted)
-    const end = submitGuess(guessing, state.entry.word)
+    expect(guessing.phase).toBe('guess')
+    const end = submitGuess(guessing, state.word)
     expect(end.phase).toBe('gameOver')
     expect(end.winner).toBe('impostors')
   })
 
   it('la parola si indovina anche senza accenti e maiuscole', () => {
     const state = newGame()
-    expect(isCorrectGuess(state, ` ${state.entry.word.toUpperCase()} `)).toBe(true)
+    expect(isCorrectGuess(state, ` ${state.word.toUpperCase()} `)).toBe(true)
     expect(isCorrectGuess(state, 'qualcosaltro')).toBe(false)
     expect(isCorrectGuess(state, '')).toBe(false)
   })
@@ -193,5 +225,49 @@ describe('ordine di parola', () => {
     expect(order).not.toContain(state.baseOrder[0])
     expect(order).toHaveLength(PLAYERS.length - 1)
     expect(turnOrderForRound(eliminated, 1)[0]).not.toBe(order[0])
+  })
+})
+
+describe("l'indizio della categoria", () => {
+  it('non serve a niente quando è attiva una categoria sola', () => {
+    expect(clueIsUseful({ ...SETTINGS, packIds: ['cibo'] })).toBe(false)
+    expect(clueIsUseful({ ...SETTINGS, packIds: ['cibo', 'animali'] })).toBe(true)
+  })
+
+  it('resta spento se il gruppo lo ha spento', () => {
+    expect(
+      clueIsUseful({ ...SETTINGS, packIds: ['cibo', 'animali'], clueForImpostors: false }),
+    ).toBe(false)
+  })
+
+  it("dà all'impostore la categoria da cui è uscita la parola", () => {
+    const state = createGame(PLAYERS, { ...SETTINGS, packIds: ['cibo'] }, seeded(7))
+    expect(roleFor(state, state.impostorIds[0]).category).toBe(state.category)
+    expect(state.category).toBe('Cibo e bevande')
+  })
+})
+
+describe('come si vota', () => {
+  it('rispetta la scelta fissa del gruppo', () => {
+    const palese = createGame(PLAYERS, { ...SETTINGS, voteMode: 'palese' }, seeded(7))
+    for (let round = 1; round <= 5; round++) {
+      expect(voteModeForRound(palese, round)).toBe('palese')
+    }
+  })
+
+  it('con il misto tiene segreto il primo voto e poi cambia', () => {
+    const misto = createGame(PLAYERS, { ...SETTINGS, voteMode: 'misto' }, seeded(7))
+    expect(voteModeForRound(misto, 1)).toBe('segreto')
+    const modes = new Set(
+      Array.from({ length: 20 }, (_, i) => voteModeForRound(misto, i + 1)),
+    )
+    expect(modes.has('palese')).toBe(true)
+  })
+
+  it('resta lo stesso se si rilegge lo stesso giro', () => {
+    const misto = createGame(PLAYERS, { ...SETTINGS, voteMode: 'misto' }, seeded(11))
+    const first = Array.from({ length: 8 }, (_, i) => voteModeForRound(misto, i + 1))
+    const second = Array.from({ length: 8 }, (_, i) => voteModeForRound(misto, i + 1))
+    expect(second).toEqual(first)
   })
 })

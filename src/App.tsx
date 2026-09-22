@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: Settings = {
   packIds: DEFAULT_PACK_IDS,
   archetypesEnabled: true,
   clueForImpostors: true,
+  voteMode: 'misto',
 }
 
 /** I giocatori e le impostazioni restano salvati, così la partita dopo parte subito. */

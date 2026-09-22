@@ -43,12 +43,12 @@ export function RevealScreen({ state, onNext }: Props) {
         {role.isImpostor ? (
           <>
             <p className="eyebrow">Sei un impostore</p>
-            {role.clue ? (
+            {role.category ? (
               <>
                 <p className="muted" style={{ marginTop: 10 }}>
                   Il tuo unico indizio
                 </p>
-                <p className="secret-word">{role.clue}</p>
+                <p className="secret-word">{role.category}</p>
               </>
             ) : (
               <p className="secret-word">Nessun indizio</p>
@@ -65,10 +65,7 @@ export function RevealScreen({ state, onNext }: Props) {
         ) : (
           <>
             <p className="eyebrow">La parola segreta</p>
-            <p className="secret-word">{state.entry.word}</p>
-            <p className="muted" style={{ marginTop: 10 }}>
-              Categoria: {state.packName}
-            </p>
+            <p className="secret-word">{state.word}</p>
           </>
         )}
       </div>

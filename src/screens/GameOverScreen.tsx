@@ -20,9 +20,9 @@ export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
 
       <div className="secret">
         <p className="eyebrow">La parola era</p>
-        <p className="secret-word">{state.entry.word}</p>
+        <p className="secret-word">{state.word}</p>
         <p className="muted" style={{ marginTop: 10 }}>
-          Indizio degli impostori: {state.entry.clue}
+          Categoria: {state.category}
         </p>
       </div>
 
