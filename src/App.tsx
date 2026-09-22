@@ -6,6 +6,7 @@ import {
   createGame,
   startVote,
   submitGuess,
+  ANSWER_SECONDS,
   REVEAL_SECONDS,
   revealSeconds,
   voteModeForRound,
@@ -34,6 +35,7 @@ const DEFAULT_SETTINGS: Settings = {
   clueForImpostors: true,
   voteMode: 'misto',
   revealSeconds: REVEAL_SECONDS,
+  answerSeconds: ANSWER_SECONDS,
 }
 
 /** I giocatori e le impostazioni restano salvati, così la partita dopo parte subito. */

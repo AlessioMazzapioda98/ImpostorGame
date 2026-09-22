@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ARCHETYPES, CLASSI, SOTTOCLASSI, archetypeRule } from './archetypes'
 import {
+  ANSWER_SECONDS,
   MAX_PLAYERS,
   MIN_PLAYERS,
+  RED_CARD_AT,
   REVEAL_SECONDS,
   alivePlayers,
   applyVote,
@@ -15,9 +17,13 @@ import {
   submitGuess,
   suggestedImpostors,
   turnOrderForRound,
+  cardsAreOff,
   clueIsUseful,
+  giveYellowCard,
+  isOnLastWarning,
   revealTimerIsOff,
   voteModeForRound,
+  yellowCardsOf,
 } from './engine'
 import type { Player, Settings } from './types'
 
@@ -33,6 +39,7 @@ const SETTINGS: Settings = {
   clueForImpostors: true,
   voteMode: 'misto',
   revealSeconds: REVEAL_SECONDS,
+  answerSeconds: ANSWER_SECONDS,
 }
 
 /** Random prevedibile, così le partite di prova sono sempre identiche. */
@@ -364,5 +371,54 @@ describe('archetipi', () => {
       }
     }
     expect(usciti.size).toBe(ARCHETYPES.length)
+  })
+})
+
+describe('cartellini', () => {
+  it('si spengono insieme al limite di tempo per parlare', () => {
+    expect(cardsAreOff(SETTINGS)).toBe(false)
+    expect(cardsAreOff({ ...SETTINGS, answerSeconds: 0 })).toBe(true)
+  })
+
+  it('il primo cartellino avverte e basta', () => {
+    const state = newGame()
+    const id = PLAYERS[0].id
+    const dopo = giveYellowCard(state, id)
+    expect(yellowCardsOf(dopo, id)).toBe(1)
+    expect(isOnLastWarning(dopo, id)).toBe(RED_CARD_AT === 2)
+    expect(dopo.eliminatedIds).not.toContain(id)
+    expect(dopo.phase).toBe('reveal')
+  })
+
+  it('il secondo cartellino porta fuori il giocatore', () => {
+    let state = newGame()
+    const crewId = PLAYERS.map((p) => p.id).find((id) => !state.impostorIds.includes(id))!
+    for (let i = 0; i < RED_CARD_AT; i++) state = giveYellowCard(state, crewId)
+    expect(state.eliminatedIds).toContain(crewId)
+    expect(alivePlayers(state)).toHaveLength(PLAYERS.length - 1)
+  })
+
+  it("l'ultimo impostore che esce per cartellino rosso può comunque tentare la parola", () => {
+    let state = createGame(PLAYERS, { ...SETTINGS, impostorCount: 1 }, seeded(7))
+    const impostorId = state.impostorIds[0]
+    for (let i = 0; i < RED_CARD_AT; i++) state = giveYellowCard(state, impostorId)
+    expect(state.phase).toBe('guess')
+    expect(state.guessingImpostorId).toBe(impostorId)
+  })
+
+  it('i cartellini di un giocatore già fuori non contano', () => {
+    let state = newGame()
+    const crewId = PLAYERS.map((p) => p.id).find((id) => !state.impostorIds.includes(id))!
+    for (let i = 0; i < RED_CARD_AT; i++) state = giveYellowCard(state, crewId)
+    const invariato = giveYellowCard(state, crewId)
+    expect(invariato).toBe(state)
+  })
+
+  it('i cartellini restano per tutta la partita, non si azzerano a ogni giro', () => {
+    const state = newGame()
+    const id = PLAYERS[0].id
+    const dopoPrimo = giveYellowCard(state, id)
+    const giroNuovo = { ...dopoPrimo, round: dopoPrimo.round + 1 }
+    expect(yellowCardsOf(giroNuovo, id)).toBe(1)
   })
 })

@@ -50,6 +50,11 @@ funziona a schermo intero e anche senza connessione.
   (`settings.revealSeconds`, 20 di default), così chi legge più lentamente non sembra
   l'impostore per questo. Si può spegnere mettendolo a zero, ma spegnendolo il tempo
   di lettura torna a essere un indizio.
+- Chi non dice la propria parola entro il tempo (`settings.answerSeconds`, 15 di
+  default) prende un cartellino giallo, e poi la dice con calma: il cartellino è la
+  penalità, non il silenzio. Al secondo cartellino si esce, con le stesse conseguenze
+  di un'eliminazione per voto, tentativo sulla parola compreso se era l'ultimo
+  impostore. A zero secondi non c'è limite e quindi non ci sono cartellini.
 - Il voto è a volte segreto e a volte a mano alzata, estratto a inizio partita. Il
   primo voto è sempre segreto, perché a mano alzata senza ancora nessun indizio ci si
   accoderebbe soltanto al primo che parla. Si può anche fissarlo su una delle due.
@@ -127,6 +132,11 @@ quante parole vere sono state dette in tutto.
 
 I valori del modello sono stime e non misure sul campo: presi da soli dicono poco, ma
 il confronto fra una configurazione e l'altra regge.
+
+I cartellini non sono nel simulatore, ma sono stati misurati a parte: spostano poco,
+fra zero e un punto con un impostore, e fino a nove punti a favore dei giocatori
+normali con due impostori, perché lì capita che uno dei due cada da solo. Si possono
+quindi stringere o allargare senza rifare i conti sul resto.
 
 `npm test` esegue anche `bilanciamento.test.ts`, che non controlla il codice ma le
 regole: se una modifica rende una configurazione una vittoria annunciata, o allunga
