@@ -1,5 +1,5 @@
 import { ARCHETYPES } from './archetypes'
-import { WORD_PACKS } from './words'
+import { MIN_PACKS_FOR_CLUE, WORD_PACKS } from './words'
 import type {
   Archetype,
   GameState,
@@ -7,14 +7,45 @@ import type {
   PlayerId,
   PlayerRole,
   Settings,
+  VoteMode,
   VoteOutcome,
-  WordEntry,
 } from './types'
 
 export type Rng = () => number
 
-export const MIN_PLAYERS = 3
+/**
+ * Sotto i quattro giocatori la partita è una votazione sola: se i due normali non
+ * indovinano subito restano in due contro l'impostore e hanno già perso.
+ */
+export const MIN_PLAYERS = 4
 export const MAX_PLAYERS = 12
+
+/** Per quanti giri si estrae in anticipo il tipo di votazione. */
+const VOTE_MODE_ROUNDS = 20
+
+/**
+ * Quanto resta aperta la carta di ogni giocatore, uguale per tutti. Serve a togliere
+ * di mezzo un indizio che non c'entra niente con il gioco: chi ci mette più tempo a
+ * leggere sembra l'impostore anche quando non lo è. Perché funzioni il conto alla
+ * rovescia non si deve poter saltare, altrimenti chi chiude prima si tradisce
+ * lo stesso, e deve bastare anche alla carta più lunga, quella dell'impostore che
+ * legge pure i nomi dei complici.
+ */
+export const REVEAL_SECONDS = 15
+
+/**
+ * Il tempo della carta è un'impostazione e non una costante perché si può spegnere,
+ * ma chi la spegne deve sapere che riapre il buco: senza conto alla rovescia il
+ * tempo di lettura torna a essere un indizio, e chi legge piano sembra l'impostore.
+ */
+export function revealSeconds(settings: Settings): number {
+  return Math.max(0, settings.revealSeconds)
+}
+
+/** Vero quando il tempo di lettura può di nuovo tradire chi legge lentamente. */
+export function revealTimerIsOff(settings: Settings): boolean {
+  return revealSeconds(settings) === 0
+}
 
 export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
   const out = items.slice()
@@ -25,16 +56,56 @@ export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
   return out
 }
 
-/** Quanti impostori ha senso mettere: sempre meno della metà, così la partita parte. */
+/**
+ * Il massimo consentito, due. Aggiungere impostori non aiuta mai il tavolo, per due
+ * motivi che si sommano: allungano la partita, e più la partita dura più parole
+ * sente l'impostore, finché la parola gliela regala il tavolo; e soprattutto votano
+ * compatti sullo stesso innocente, mentre i normali che non hanno ancora capito
+ * niente si sparpagliano. Con tre impostori i giocatori normali vincono meno di una
+ * partita su dieci, per questo tre non si possono scegliere.
+ */
 export function maxImpostors(playerCount: number): number {
-  return Math.max(1, Math.floor(playerCount / 3))
+  return playerCount <= 5 ? 1 : 2
 }
 
-function pickEntry(packIds: string[], rng: Rng): { entry: WordEntry; packName: string } {
+/**
+ * Quanti impostori conviene mettere davvero, il valore che l'app propone.
+ * Fino a sette giocatori uno solo basta e la partita resta corta. Da otto in su
+ * due tengono vivo il tavolo, al prezzo di un paio di votazioni in più.
+ */
+export function suggestedImpostors(playerCount: number): number {
+  return playerCount <= 7 ? 1 : 2
+}
+
+/**
+ * L'indizio è la categoria, quindi vale qualcosa solo se le categorie in gioco
+ * sono almeno due: con una sola la sanno già tutti.
+ */
+export function clueIsUseful(settings: Settings): boolean {
+  return settings.clueForImpostors && settings.packIds.length >= MIN_PACKS_FOR_CLUE
+}
+
+/**
+ * Estrae come si vota giro per giro. Il primo voto è sempre segreto, perché a mano
+ * alzata senza ancora nessun indizio ci si accoderebbe soltanto al primo che parla.
+ */
+function rollVoteModes(setting: Settings['voteMode'], rng: Rng): VoteMode[] {
+  if (setting !== 'misto') return Array.from({ length: VOTE_MODE_ROUNDS }, () => setting)
+  return Array.from({ length: VOTE_MODE_ROUNDS }, (_, i) =>
+    i === 0 || rng() < 0.5 ? 'segreto' : 'palese',
+  )
+}
+
+/** Come si vota nel giro indicato. */
+export function voteModeForRound(state: GameState, round: number): VoteMode {
+  return state.voteModeByRound[round - 1] ?? 'segreto'
+}
+
+function pickWord(packIds: string[], rng: Rng): { word: string; category: string } {
   const packs = WORD_PACKS.filter((pack) => packIds.includes(pack.id))
   const usable = packs.length > 0 ? packs : WORD_PACKS
   const pool = usable.flatMap((pack) =>
-    pack.entries.map((entry) => ({ entry, packName: pack.name })),
+    pack.entries.map((word) => ({ word, category: pack.name })),
   )
   return pool[Math.floor(rng() * pool.length)]
 }
@@ -57,15 +128,15 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
   const impostorIds = shuffle(players, rng)
     .slice(0, impostorCount)
     .map((player) => player.id)
-  const { entry, packName } = pickEntry(settings.packIds, rng)
+  const { word, category } = pickWord(settings.packIds, rng)
   const baseOrder = shuffle(players, rng).map((player) => player.id)
 
   return {
     phase: 'reveal',
     players,
     settings: { ...settings, impostorCount },
-    entry,
-    packName,
+    word,
+    category,
     impostorIds,
     archetypeByPlayer: settings.archetypesEnabled ? assignArchetypes(players, rng) : {},
     eliminatedIds: [],
@@ -75,6 +146,7 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     turnOrder: baseOrder,
     lastVote: null,
     guessingImpostorId: null,
+    voteModeByRound: rollVoteModes(settings.voteMode, rng),
     winner: null,
     endReason: null,
   }
@@ -102,8 +174,8 @@ export function roleFor(state: GameState, playerId: PlayerId): PlayerRole {
   return {
     playerId,
     isImpostor: impostor,
-    word: impostor ? null : state.entry.word,
-    clue: impostor && state.settings.clueForImpostors ? state.entry.clue : null,
+    word: impostor ? null : state.word,
+    category: impostor && state.settings.clueForImpostors ? state.category : null,
     fellowImpostorNames: impostor
       ? state.impostorIds
           .filter((id) => id !== playerId)
@@ -198,7 +270,7 @@ export function continueFromVoteResult(state: GameState): GameState {
       lastVote: null,
     }
   }
-  if (isImpostor(state, outcome.eliminatedId)) {
+  if (isImpostor(state, outcome.eliminatedId) && aliveImpostors(state).length === 0) {
     return { ...state, phase: 'guess', guessingImpostorId: outcome.eliminatedId }
   }
   return settleAfterElimination(state)
@@ -213,7 +285,7 @@ export function normalizeGuess(text: string): string {
 }
 
 export function isCorrectGuess(state: GameState, guess: string): boolean {
-  return normalizeGuess(guess) === normalizeGuess(state.entry.word) && normalizeGuess(guess) !== ''
+  return normalizeGuess(guess) === normalizeGuess(state.word) && normalizeGuess(guess) !== ''
 }
 
 /** Il tentativo dell'impostore eliminato: se indovina, vincono gli impostori. */
