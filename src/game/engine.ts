@@ -1,7 +1,9 @@
-import { ARCHETYPES } from './archetypes'
+import { archetypesUpToLevel } from './archetypes'
 import { WORD_PACKS } from './words'
 import type {
   Archetype,
+  ArchetypeCategory,
+  ArchetypeLevel,
   GameState,
   Player,
   PlayerId,
@@ -39,13 +41,59 @@ function pickEntry(packIds: string[], rng: Rng): { entry: WordEntry; packName: s
   return pool[Math.floor(rng() * pool.length)]
 }
 
-function assignArchetypes(players: Player[], rng: Rng): Record<PlayerId, Archetype> {
+/** Quanti archetipi di livello 3 può reggere un tavolo senza diventare illeggibile. */
+export function hardArchetypeBudget(playerCount: number): number {
+  return Math.max(1, Math.ceil(playerCount / 4))
+}
+
+/**
+ * Distribuisce un archetipo a testa seguendo l'ordine di parola, con tre accortezze:
+ * le categorie si alternano invece di ammucchiarsi, gli archetipi più cattivi hanno
+ * un tetto, e chi apre il giro non riceve mai una regola che guarda la parola
+ * precedente (né due di quelle regole finiscono su giocatori consecutivi).
+ */
+function assignArchetypes(
+  order: PlayerId[],
+  rng: Rng,
+  maxLevel: ArchetypeLevel,
+): Record<PlayerId, Archetype> {
+  const available = archetypesUpToLevel(maxLevel)
+  if (available.length === 0) return {}
+
   const assigned: Record<PlayerId, Archetype> = {}
-  let pool = shuffle(ARCHETYPES, rng)
-  for (const player of players) {
-    if (pool.length === 0) pool = shuffle(ARCHETYPES, rng)
-    assigned[player.id] = pool.pop() as Archetype
+  const usedByCategory: Record<ArchetypeCategory, number> = {
+    forma: 0,
+    voce: 0,
+    senso: 0,
+    tavolo: 0,
   }
+  let pool = shuffle(available, rng)
+  let hardLeft = hardArchetypeBudget(order.length)
+  let previous: Archetype | null = null
+
+  for (let i = 0; i < order.length; i++) {
+    // Con pochi archetipi disponibili e tanti giocatori si ricomincia da capo.
+    if (pool.length === 0) pool = shuffle(available, rng)
+
+    const allowed = pool.filter((archetype) => {
+      if (archetype.dependsOnPrevious && (i === 0 || previous?.dependsOnPrevious)) return false
+      if (archetype.level === 3 && hardLeft <= 0) return false
+      return true
+    })
+    const candidates = allowed.length > 0 ? allowed : pool
+
+    // Il pool è già mescolato, quindi il primo della categoria meno servita è casuale.
+    const fewest = Math.min(...candidates.map((a) => usedByCategory[a.category]))
+    const chosen =
+      candidates.find((a) => usedByCategory[a.category] === fewest) ?? candidates[0]
+
+    assigned[order[i]] = chosen
+    usedByCategory[chosen.category] += 1
+    if (chosen.level === 3) hardLeft -= 1
+    pool = pool.filter((a) => a.id !== chosen.id)
+    previous = chosen
+  }
+
   return assigned
 }
 
@@ -67,7 +115,9 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     entry,
     packName,
     impostorIds,
-    archetypeByPlayer: settings.archetypesEnabled ? assignArchetypes(players, rng) : {},
+    archetypeByPlayer: settings.archetypesEnabled
+      ? assignArchetypes(baseOrder, rng, settings.maxArchetypeLevel ?? 3)
+      : {},
     eliminatedIds: [],
     revealIndex: 0,
     round: 1,

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { ARCHETYPES, archetypesUpToLevel } from './archetypes'
 import {
+  MAX_PLAYERS,
   alivePlayers,
   applyVote,
   continueFromVoteResult,
   countVotes,
   createGame,
+  hardArchetypeBudget,
   isCorrectGuess,
   maxImpostors,
   roleFor,
@@ -193,5 +196,69 @@ describe('ordine di parola', () => {
     expect(order).not.toContain(state.baseOrder[0])
     expect(order).toHaveLength(PLAYERS.length - 1)
     expect(turnOrderForRound(eliminated, 1)[0]).not.toBe(order[0])
+  })
+})
+
+describe('archetipi', () => {
+  const MANY: Player[] = Array.from({ length: 12 }, (_, i) => ({
+    id: `q${i}`,
+    name: `Giocatore ${i + 1}`,
+  }))
+
+  function gamesOverSeeds(players: Player[], settings: Settings) {
+    return Array.from({ length: 60 }, (_, seed) => createGame(players, settings, seeded(seed + 1)))
+  }
+
+  it('non ha archetipi con lo stesso id', () => {
+    const ids = ARCHETYPES.map((archetype) => archetype.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('ha abbastanza archetipi morbidi da coprire un tavolo pieno senza ripetizioni', () => {
+    expect(archetypesUpToLevel(1).length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+  })
+
+  it('dà a ogni giocatore un archetipo diverso', () => {
+    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
+      const assegnati = Object.values(state.archetypeByPlayer).map((a) => a.id)
+      expect(assegnati).toHaveLength(MANY.length)
+      expect(new Set(assegnati).size).toBe(MANY.length)
+    }
+  })
+
+  it("non dà a chi apre il giro una regola che guarda la parola precedente", () => {
+    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
+      const catena = state.baseOrder.map((id) => state.archetypeByPlayer[id])
+      expect(catena[0].dependsOnPrevious).toBeFalsy()
+      for (let i = 1; i < catena.length; i++) {
+        const incatenati = catena[i].dependsOnPrevious && catena[i - 1].dependsOnPrevious
+        expect(incatenati).toBeFalsy()
+      }
+    }
+  })
+
+  it('tiene i livelli 3 entro il tetto previsto', () => {
+    for (const players of [PLAYERS, MANY]) {
+      for (const state of gamesOverSeeds(players, SETTINGS)) {
+        const cattivi = Object.values(state.archetypeByPlayer).filter((a) => a.level === 3)
+        expect(cattivi.length).toBeLessThanOrEqual(hardArchetypeBudget(players.length))
+      }
+    }
+  })
+
+  it('con il livello massimo a 1 lascia solo archetipi da scenetta', () => {
+    for (const state of gamesOverSeeds(MANY, { ...SETTINGS, maxArchetypeLevel: 1 })) {
+      for (const archetype of Object.values(state.archetypeByPlayer)) {
+        expect(archetype.level).toBe(1)
+      }
+    }
+  })
+
+  it('spalma le categorie invece di ammucchiarle', () => {
+    for (const state of gamesOverSeeds(PLAYERS, SETTINGS)) {
+      const categorie = new Set(Object.values(state.archetypeByPlayer).map((a) => a.category))
+      // Sei giocatori, quattro categorie: devono esserci tutte.
+      expect(categorie.size).toBe(4)
+    }
   })
 })

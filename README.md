@@ -7,7 +7,7 @@ un'ultima occasione: se indovina la parola, vincono gli impostori.
 
 In più, ogni giocatore riceve un **archetipo** insieme alla propria carta: un vincolo
 sul modo in cui deve dire la sua parola (Il Poeta deve rimare, Il Minimalista non può
-superare le quattro lettere, Il Cantante deve cantare). Gli archetipi valgono per tutti,
+superare le cinque lettere, Il Cantante deve cantare). Gli archetipi valgono per tutti,
 impostori compresi, così non tradiscono il ruolo.
 
 ## Come si avvia
@@ -43,7 +43,7 @@ src/game/      logica pura, senza React: stato della partita, voti, vittoria
   types.ts       i tipi condivisi
   engine.ts      creazione partita, carte, votazione, fine partita
   words.ts       le categorie di parole con il relativo indizio
-  archetypes.ts  gli archetipi
+  archetypes.ts  gli archetipi, con categoria e livello
   engine.test.ts i test della logica
 src/screens/   una schermata per ogni fase: consegna, giro, voto, esito
 src/App.tsx    tiene lo stato della partita e sceglie la schermata
@@ -52,9 +52,30 @@ src/App.tsx    tiene lo stato della partita e sceglie la schermata
 La logica sta tutta in `src/game/engine.ts` come funzioni pure che prendono uno stato
 e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
 
-## Aggiungere parole o archetipi
+## Gli archetipi
+
+Stanno in `src/game/archetypes.ts`. Ognuno dichiara, oltre al nome e alla regola scritta
+rivolgendosi al giocatore, due cose che servono a distribuirli bene:
+
+- `category`, cioè su cosa mette le mani.
+  - `forma` vincola com'è fatta la parola, e il tavolo può verificarlo (rima, lunghezza,
+    lettere, lingua).
+  - `voce` vincola solo come la dici: fa ridere ma non cambia l'informazione che passa.
+  - `senso` vincola cosa può significare, quindi sporca la deduzione.
+  - `tavolo` ti obbliga a fare qualcosa verso gli altri e muove il voto.
+- `level`, cioè quanto ti mette nei guai: 1 fa solo ridere, 2 ti complica la parola,
+  3 può farti sembrare l'impostore anche se sei innocente.
+
+`assignArchetypes` in `src/game/engine.ts` segue l'ordine di parola e tiene conto di
+entrambi: alterna le categorie invece di ammucchiarle, non supera il tetto di archetipi
+di livello 3 (`hardArchetypeBudget`, circa uno ogni quattro giocatori) e non dà mai a
+chi apre il giro una regola che guarda la parola precedente, né due di quelle regole a
+giocatori consecutivi.
+
+Con `settings.maxArchetypeLevel` si decide fin dove spingersi: a 1 restano solo le
+scenette, a 3 (il valore predefinito) vale tutto.
+
+## Aggiungere parole
 
 Le parole stanno in `src/game/words.ts`, raggruppate per categoria: ogni voce ha la
-parola e l'indizio che leggerà l'impostore. Gli archetipi stanno in
-`src/game/archetypes.ts`: bastano un nome, la regola scritta rivolgendosi al giocatore
-e un'emoji.
+parola e l'indizio che leggerà l'impostore.
