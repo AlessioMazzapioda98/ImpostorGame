@@ -33,15 +33,17 @@ export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
           {state.players.map((player) => {
             const impostore = isImpostor(state, player.id)
             const eliminato = state.eliminatedIds.includes(player.id)
-            const archetipo = state.archetypeByPlayer[player.id]
+            const carta = state.archetypesByPlayer[player.id]
             return (
               <div key={player.id} className="recap-row">
                 <Avatar nome={player.name} dimensione="sm" spento={eliminato} />
                 <span className="name">
                   {player.name}
-                  {archetipo && (
+                  {carta && (
                     <span className="recap-archetipo">
-                      {archetipo.emoji} {archetipo.name}
+                      {carta.classe.emoji} {carta.classe.name}
+                      {carta.targetName ? ` (${carta.targetName})` : ''} ·{' '}
+                      {carta.sottoclasse.emoji} {carta.sottoclasse.name}
                     </span>
                   )}
                 </span>

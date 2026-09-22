@@ -1,187 +1,226 @@
-import type { Archetype, ArchetypeCategory } from './types'
+import type { Archetype } from './types'
 
 /**
- * Gli archetipi vincolano quello che il giocatore può dire al proprio turno: valgono
- * allo stesso modo per i giocatori normali e per gli impostori, così non tradiscono
- * il ruolo.
+ * Ogni giocatore riceve due archetipi insieme alla propria carta, come in un gioco di
+ * ruolo: una classe e una sottoclasse. Valgono allo stesso modo per i giocatori normali
+ * e per gli impostori, così non tradiscono il ruolo.
  *
- * Nessun archetipo riguarda il tono o il modo di pronunciare la parola: cantare o
- * sussurrare fa ridere per due secondi e non cambia niente di quello che il tavolo
- * deve capire. Ogni archetipo qui dentro vincola la parola, il suo significato o il
- * voto.
+ * - La **classe** vincola come ti comporti durante la discussione e al voto.
+ * - La **sottoclasse** vincola le parole che puoi dire al tuo turno.
  *
- * Oltre al testo ognuno dichiara `category`, cioè su cosa mette le mani, e `trap`,
- * vero se può farti sembrare l'impostore anche quando sei innocente. In partita
- * vengono pescati a caso: vedi `assignArchetypes` in engine.ts.
+ * Nessuno dei due riguarda il tono o il modo di pronunciare: cantare o sussurrare fa
+ * ridere per due secondi e non cambia niente di quello che il tavolo deve capire.
+ *
+ * Le classi con `needsTarget` nominano un altro giocatore, sorteggiato dal gioco: nella
+ * regola sta scritto `{bersaglio}`, e `archetypeRule` ci mette il nome.
  */
 export const ARCHETYPES: Archetype[] = [
-  // --- forma: vincolano com'è fatta la parola, e il tavolo può verificarlo dopo ---
-  {
-    id: 'poeta',
-    name: 'Il Poeta',
-    rule: 'La tua parola deve fare rima con quella detta dal giocatore prima di te. Se apri tu il giro, sei libero.',
-    emoji: '🪶',
-    category: 'forma',
-    trap: true,
-  },
-  {
-    id: 'omonimo',
-    name: "L'Omonimo",
-    rule: 'Tutte le tue parole, in ogni giro, devono iniziare con la stessa lettera del tuo nome.',
-    emoji: '🅰️',
-    category: 'forma',
-  },
-  {
-    id: 'minimalista',
-    name: 'Il Minimalista',
-    rule: 'La tua parola non può superare le cinque lettere.',
-    emoji: '🔹',
-    category: 'forma',
-  },
-  {
-    id: 'grandioso',
-    name: 'Il Grandioso',
-    rule: 'La tua parola deve essere lunga almeno nove lettere.',
-    emoji: '🗿',
-    category: 'forma',
-  },
-  {
-    id: 'raddoppio',
-    name: 'Il Raddoppio',
-    rule: 'La tua parola deve contenere una doppia, come in nonno o in pizza.',
-    emoji: '🔁',
-    category: 'forma',
-  },
-  {
-    id: 'azione',
-    name: "L'Uomo d'Azione",
-    rule: "La tua parola deve essere un verbo all'infinito.",
-    emoji: '🏃',
-    category: 'forma',
-  },
-  {
-    id: 'straniero',
-    name: 'Lo Straniero',
-    rule: "Devi dire la tua parola in una lingua che non è l'italiano.",
-    emoji: '🌍',
-    category: 'forma',
-  },
-
-  // --- senso: vincolano cosa può significare la parola, e sporcano la deduzione ---
+  // ---------------------------------------------------------------- classi ---
   {
     id: 'matto',
     name: 'Il Matto',
-    rule: 'Nessuna regola. Puoi dire quello che ti pare, anche una parola che non azzecca niente.',
+    rule: 'Nessuna regola, nemmeno la tua sottoclasse: fai quello che ti pare.',
     emoji: '🃏',
-    category: 'senso',
-    trap: true,
-  },
-  {
-    id: 'salterino',
-    name: 'Il Salterino',
-    rule: 'Il collegamento con la parola segreta deve essere lungo: ci devono volere almeno due passaggi per arrivarci.',
-    emoji: '🦘',
-    category: 'senso',
-    trap: true,
-  },
-  {
-    id: 'basico',
-    name: 'Il Basico',
-    rule: 'La tua parola deve essere la più scontata possibile, la prima che verrebbe in mente a chiunque.',
-    emoji: '🥱',
-    category: 'senso',
-  },
-  {
-    id: 'fuoriluogo',
-    name: 'Il Fuoriluogo',
-    rule: 'La tua parola deve essere fuori luogo: volgare, imbarazzante, di quelle che a tavola fanno calare il silenzio.',
-    emoji: '🙊',
-    category: 'senso',
-    trap: true,
-  },
-  {
-    id: 'goloso',
-    name: 'Il Goloso',
-    rule: 'La tua parola deve avere a che fare con il cibo, qualunque sia la parola segreta.',
-    emoji: '🍝',
-    category: 'senso',
-    trap: true,
-  },
-  {
-    id: 'astratto',
-    name: "L'Astratto",
-    rule: 'La tua parola non può essere una cosa che si tocca: solo idee, sentimenti, stati d’animo.',
-    emoji: '☁️',
-    category: 'senso',
-    trap: true,
-  },
-  {
-    id: 'concreto',
-    name: 'Il Concreto',
-    rule: 'La tua parola deve essere una cosa che si può toccare.',
-    emoji: '🧱',
-    category: 'senso',
-  },
-
-  // --- tavolo: non toccano la parola, spostano il voto ---
-  {
-    id: 'ossessionato',
-    name: "L'Ossessionato",
-    rule: 'Scegli adesso un giocatore: devi votare lui a ogni votazione, qualunque cosa succeda.',
-    emoji: '🎯',
-    category: 'tavolo',
-    trap: true,
-  },
-  {
-    id: 'rivale',
-    name: 'Il Rivale',
-    rule: 'Scegli adesso un giocatore: non puoi votarlo per nessun motivo, nemmeno se confessa.',
-    emoji: '👊',
-    category: 'tavolo',
-    trap: true,
-  },
-  {
-    id: 'silenzioso',
-    name: 'Il Silenzioso',
-    rule: 'Dopo la tua parola non puoi più parlare fino al voto.',
-    emoji: '🤐',
-    category: 'tavolo',
-    trap: true,
+    kind: 'classe',
   },
   {
     id: 'accusatore',
     name: "L'Accusatore",
-    rule: 'Subito dopo la tua parola devi accusare qualcuno ad alta voce, anche senza motivo.',
+    rule: 'Accusa {bersaglio} a ogni discussione e vota sempre {bersaglio}.',
     emoji: '👉',
-    category: 'tavolo',
+    kind: 'classe',
+    needsTarget: true,
   },
   {
     id: 'avvocato',
     name: "L'Avvocato",
-    rule: 'Prima del voto devi difendere un giocatore e spiegare perché è innocente.',
+    rule: 'Difendi {bersaglio} a ogni discussione e non votare mai {bersaglio}.',
     emoji: '🛡️',
-    category: 'tavolo',
+    kind: 'classe',
+    needsTarget: true,
+  },
+  {
+    id: 'testimone',
+    name: 'Il Testimone',
+    rule: 'Prima di ogni voto giudica {bersaglio} ad alta voce: innocente o colpevole.',
+    emoji: '👁️',
+    kind: 'classe',
+    needsTarget: true,
   },
   {
     id: 'voltagabbana',
     name: 'Il Voltagabbana',
-    rule: 'Non puoi votare la stessa persona che hai votato nel giro precedente.',
+    rule: 'A ogni votazione vota una persona diversa dalla precedente.',
     emoji: '🔄',
-    category: 'tavolo',
+    kind: 'classe',
+  },
+  {
+    id: 'silenzioso',
+    name: 'Il Silenzioso',
+    rule: 'Dopo la tua parola non puoi più parlare, per tutta la partita.',
+    emoji: '🤐',
+    kind: 'classe',
+  },
+  {
+    id: 'gregario',
+    name: 'Il Gregario',
+    rule: 'Appoggia sempre la prima accusa della discussione.',
+    emoji: '🐑',
+    kind: 'classe',
+  },
+  {
+    id: 'democratico',
+    name: 'Il Democratico',
+    rule: 'Vota chi si è preso più accuse durante la discussione.',
+    emoji: '🗳️',
+    kind: 'classe',
+  },
+  {
+    id: 'causapersa',
+    name: 'La Causa Persa',
+    rule: 'Difendi chi si è preso più accuse, e non votarlo.',
+    emoji: '🥀',
+    kind: 'classe',
+  },
+  {
+    id: 'vendicativo',
+    name: 'Il Vendicativo',
+    rule: 'Vota chi ti ha accusato. Se nessuno ti accusa, vota come vuoi.',
+    emoji: '😤',
+    kind: 'classe',
+  },
+  {
+    id: 'conservatore',
+    name: 'Il Conservatore',
+    rule: 'Vota sempre la stessa persona che hai votato la prima volta.',
+    emoji: '⚓',
+    kind: 'classe',
+  },
+  {
+    id: 'codardo',
+    name: 'Il Codardo',
+    rule: 'Non accusare mai nessuno: puoi solo difendere.',
+    emoji: '🐔',
+    kind: 'classe',
+  },
+  {
+    id: 'pentito',
+    name: 'Il Pentito',
+    rule: 'Prima della seconda votazione dichiara di essere l’impostore.',
+    emoji: '🙏',
+    kind: 'classe',
+  },
+
+  // ----------------------------------------------------------- sottoclassi ---
+  // Vincolano com'è fatta la parola, e il tavolo può verificarlo dopo.
+  {
+    id: 'poeta',
+    name: 'Il Poeta',
+    rule: 'Fai rima con la parola detta prima di te. Se apri tu il giro, sei libero.',
+    emoji: '🪶',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'omonimo',
+    name: "L'Omonimo",
+    rule: 'Ogni tua parola inizia con la lettera del tuo nome.',
+    emoji: '🅰️',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'minimalista',
+    name: 'Il Minimalista',
+    rule: 'Massimo cinque lettere.',
+    emoji: '🔹',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'grandioso',
+    name: 'Il Grandioso',
+    rule: 'Almeno nove lettere.',
+    emoji: '🗿',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'raddoppio',
+    name: 'Il Raddoppio',
+    rule: 'Serve una doppia dentro la parola, come in nonno o pizza.',
+    emoji: '🔁',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'azione',
+    name: "L'Uomo d'Azione",
+    rule: 'Deve essere un verbo all’infinito.',
+    emoji: '🏃',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'straniero',
+    name: 'Lo Straniero',
+    rule: 'In una lingua qualsiasi, tranne l’italiano.',
+    emoji: '🌍',
+    kind: 'sottoclasse',
+  },
+  // Vincolano cosa può significare la parola, e sporcano la deduzione.
+  {
+    id: 'salterino',
+    name: 'Il Salterino',
+    rule: 'Collegati alla parola segreta in due passaggi, mai in uno.',
+    emoji: '🦘',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'basico',
+    name: 'Il Basico',
+    rule: 'La parola più scontata che esista, quella che direbbe chiunque.',
+    emoji: '🥱',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'sam',
+    name: 'Il S.A.M.',
+    rule: 'Volgare o imbarazzante, di quelle che fanno calare il silenzio.',
+    emoji: '🙊',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'goloso',
+    name: 'Il Goloso',
+    rule: 'Deve riguardare il cibo, qualunque sia la parola segreta.',
+    emoji: '🍝',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'astratto',
+    name: "L'Astratto",
+    rule: 'Solo cose che non si toccano: idee, sentimenti, stati d’animo.',
+    emoji: '☁️',
+    kind: 'sottoclasse',
+  },
+  {
+    id: 'concreto',
+    name: 'Il Concreto',
+    rule: 'Solo cose che si possono toccare.',
+    emoji: '🧱',
+    kind: 'sottoclasse',
   },
 ]
 
-/** Come chiamare le categorie quando si mostrano al giocatore. */
-export const ARCHETYPE_CATEGORY_LABELS: Record<ArchetypeCategory, string> = {
-  forma: 'Forma della parola',
-  senso: 'Significato',
-  tavolo: 'Verso gli altri',
-}
+/** Le classi: vincolano come ti comporti nella discussione e al voto. */
+export const CLASSI = ARCHETYPES.filter((archetype) => archetype.kind === 'classe')
+
+/** Le sottoclassi: vincolano le parole che puoi dire al tuo turno. */
+export const SOTTOCLASSI = ARCHETYPES.filter((archetype) => archetype.kind === 'sottoclasse')
+
+/** Il segnaposto che le classi con bersaglio usano nella regola. */
+export const SEGNAPOSTO_BERSAGLIO = '{bersaglio}'
 
 /**
- * Gli archetipi che possono entrare in partita: senza trappole restano solo quelli
- * che ti complicano la parola, e nessuno rischia di farsi linciare da innocente.
+ * La regola da mostrare al giocatore, col nome del bersaglio al posto del segnaposto.
+ * Senza bersaglio resta una formula generica, così la regola si legge comunque.
  */
-export function playableArchetypes(trapsEnabled: boolean): Archetype[] {
-  return trapsEnabled ? ARCHETYPES : ARCHETYPES.filter((archetype) => !archetype.trap)
+export function archetypeRule(archetype: Archetype, targetName: string | null): string {
+  if (!archetype.needsTarget) return archetype.rule
+  return archetype.rule.split(SEGNAPOSTO_BERSAGLIO).join(targetName ?? 'il giocatore indicato')
 }

@@ -222,22 +222,11 @@ export function SetupScreen({
         <Interruttore
           acceso={settings.archetypesEnabled}
           titolo="Archetipi"
-          nota="Ogni giocatore riceve un ruolo che lo obbliga a parlare in un certo modo."
+          nota="Ogni giocatore riceve una classe, che vincola come si comporta, e una sottoclasse, che vincola le parole che può dire."
           onCambia={() =>
             onSettingsChange({ ...settings, archetypesEnabled: !settings.archetypesEnabled })
           }
         />
-
-        {settings.archetypesEnabled && (
-          <Interruttore
-            acceso={settings.trapsEnabled ?? true}
-            titolo="Archetipi trappola"
-            nota="I più cattivi: possono farti sembrare l'impostore anche quando sei innocente. Spegnili per una serata più tranquilla."
-            onCambia={() =>
-              onSettingsChange({ ...settings, trapsEnabled: !(settings.trapsEnabled ?? true) })
-            }
-          />
-        )}
 
         <details className="altre">
           <summary>Altre impostazioni</summary>

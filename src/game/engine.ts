@@ -1,7 +1,8 @@
-import { playableArchetypes } from './archetypes'
+import { CLASSI, SOTTOCLASSI } from './archetypes'
 import { MIN_PACKS_FOR_CLUE, WORD_PACKS } from './words'
 import type {
   Archetype,
+  ArchetypeCard,
   GameState,
   Player,
   PlayerId,
@@ -111,25 +112,40 @@ function pickWord(packIds: string[], rng: Rng): { word: string; category: string
 }
 
 /**
- * Un archetipo a testa, pescati da un mazzo mescolato e basta: nessun bilanciamento
- * fra categorie, nessun tetto alle trappole.
+ * Una classe e una sottoclasse a testa, pescate da due mazzi mescolati e basta:
+ * nessun bilanciamento, nessun tetto. Le classi che nominano qualcuno ricevono un
+ * bersaglio sorteggiato fra gli altri giocatori.
  */
-function assignArchetypes(
-  order: PlayerId[],
+function assignArchetypeCards(
+  players: Player[],
   rng: Rng,
-  trapsEnabled: boolean,
-): Record<PlayerId, Archetype> {
-  const available = playableArchetypes(trapsEnabled)
-  if (available.length === 0) return {}
+): Record<PlayerId, ArchetypeCard> {
+  const cards: Record<PlayerId, ArchetypeCard> = {}
+  let classi = shuffle(CLASSI, rng)
+  let sottoclassi = shuffle(SOTTOCLASSI, rng)
 
-  const assigned: Record<PlayerId, Archetype> = {}
-  let pool = shuffle(available, rng)
-  for (const playerId of order) {
+  for (const player of players) {
     // Con più giocatori che archetipi si rimescola e si ricomincia.
-    if (pool.length === 0) pool = shuffle(available, rng)
-    assigned[playerId] = pool.pop() as Archetype
+    if (classi.length === 0) classi = shuffle(CLASSI, rng)
+    if (sottoclassi.length === 0) sottoclassi = shuffle(SOTTOCLASSI, rng)
+
+    const classe = classi.pop() as Archetype
+    const sottoclasse = sottoclassi.pop() as Archetype
+    cards[player.id] = {
+      classe,
+      sottoclasse,
+      targetName: classe.needsTarget ? pickTargetName(players, player.id, rng) : null,
+    }
   }
-  return assigned
+
+  return cards
+}
+
+/** Il bersaglio di una classe: un altro giocatore a caso, mai te stesso. */
+function pickTargetName(players: Player[], playerId: PlayerId, rng: Rng): string | null {
+  const others = players.filter((player) => player.id !== playerId)
+  if (others.length === 0) return null
+  return others[Math.floor(rng() * others.length)].name
 }
 
 export function createGame(players: Player[], settings: Settings, rng: Rng = Math.random): GameState {
@@ -150,9 +166,7 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     word,
     category,
     impostorIds,
-    archetypeByPlayer: settings.archetypesEnabled
-      ? assignArchetypes(baseOrder, rng, settings.trapsEnabled ?? true)
-      : {},
+    archetypesByPlayer: settings.archetypesEnabled ? assignArchetypeCards(players, rng) : {},
     eliminatedIds: [],
     revealIndex: 0,
     round: 1,
@@ -196,7 +210,7 @@ export function roleFor(state: GameState, playerId: PlayerId): PlayerRole {
           .map((id) => playerById(state, id)?.name ?? '')
           .filter(Boolean)
       : [],
-    archetype: state.archetypeByPlayer[playerId] ?? null,
+    archetypes: state.archetypesByPlayer[playerId] ?? null,
   }
 }
 

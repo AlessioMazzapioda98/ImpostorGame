@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { archetypeRule } from '../game/archetypes'
 import { alivePlayers } from '../game/engine'
 import type { GameState, PlayerId } from '../game/types'
 import { Avatar } from '../ui/Avatar'
@@ -29,12 +30,12 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
 
   const segreto = modalita === 'segreto'
   const voter = voters[voterIndex]
-  // Qui si ricordano solo gli archetipi della categoria "tavolo", quelli che
-  // vincolano chi puoi votare: gli altri riguardano la parola e non servono a
-  // nulla adesso. Solo nel voto segreto, perché in quello palese la regola la
-  // leggerebbe tutto il tavolo.
-  const suo = state.archetypeByPlayer[voter.id]
-  const archetipo = segreto && suo?.category === 'tavolo' ? suo : undefined
+  // Qui si ricorda solo la classe, che è quella che vincola come ti comporti e
+  // chi puoi votare: la sottoclasse riguarda la parola e al voto non serve più.
+  // Solo nel voto segreto, perché in quello palese la regola la leggerebbe
+  // tutto il tavolo.
+  const carta = state.archetypesByPlayer[voter.id]
+  const classe = segreto ? carta?.classe : undefined
   const passo = `Voto ${voterIndex + 1} di ${voters.length}`
 
   const conferma = () => {
@@ -86,14 +87,16 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
           </div>
         </div>
 
-        {archetipo && (
+        {classe && (
           <div className="promemoria">
-            <p className="eyebrow">Ricorda il tuo archetipo</p>
+            <p className="eyebrow">Ricorda la tua classe</p>
             <p className="promemoria-nome">
-              <span className="archetipo-emoji">{archetipo.emoji}</span>
-              {archetipo.name}
+              <span className="archetipo-emoji">{classe.emoji}</span>
+              {classe.name}
             </p>
-            <p className="promemoria-regola">{archetipo.rule}</p>
+            <p className="promemoria-regola">
+              {archetypeRule(classe, carta?.targetName ?? null)}
+            </p>
           </div>
         )}
 

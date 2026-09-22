@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { archetypeRule } from '../game/archetypes'
 import { roleFor } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
@@ -124,15 +125,27 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Prop
             </>
           )}
 
-          {role.archetype && (
-            <div className="archetipo">
-              <p className="eyebrow">Il tuo archetipo</p>
-              <p className="archetipo-nome">
-                <span className="archetipo-emoji">{role.archetype.emoji}</span>
-                {role.archetype.name}
-              </p>
-              <p className="archetipo-regola">{role.archetype.rule}</p>
-            </div>
+          {role.archetypes && (
+            <>
+              <div className="archetipo">
+                <p className="eyebrow">La tua classe</p>
+                <p className="archetipo-nome">
+                  <span className="archetipo-emoji">{role.archetypes.classe.emoji}</span>
+                  {role.archetypes.classe.name}
+                </p>
+                <p className="archetipo-regola">
+                  {archetypeRule(role.archetypes.classe, role.archetypes.targetName)}
+                </p>
+              </div>
+              <div className="archetipo">
+                <p className="eyebrow">La tua sottoclasse</p>
+                <p className="archetipo-nome">
+                  <span className="archetipo-emoji">{role.archetypes.sottoclasse.emoji}</span>
+                  {role.archetypes.sottoclasse.name}
+                </p>
+                <p className="archetipo-regola">{role.archetypes.sottoclasse.rule}</p>
+              </div>
+            </>
           )}
         </SecretCard>
       </ScreenBody>

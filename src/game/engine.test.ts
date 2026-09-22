@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ARCHETYPES, playableArchetypes } from './archetypes'
+import { ARCHETYPES, CLASSI, SOTTOCLASSI, archetypeRule } from './archetypes'
 import {
   MAX_PLAYERS,
   MIN_PLAYERS,
@@ -79,12 +79,12 @@ describe('creazione della partita', () => {
 
   it('dà un archetipo a ogni giocatore quando sono attivi', () => {
     const state = newGame()
-    expect(Object.keys(state.archetypeByPlayer)).toHaveLength(PLAYERS.length)
+    expect(Object.keys(state.archetypesByPlayer)).toHaveLength(PLAYERS.length)
   })
 
   it('non dà archetipi quando sono spenti', () => {
     const state = createGame(PLAYERS, { ...SETTINGS, archetypesEnabled: false }, seeded(7))
-    expect(state.archetypeByPlayer).toEqual({})
+    expect(state.archetypesByPlayer).toEqual({})
   })
 })
 
@@ -298,33 +298,59 @@ describe('archetipi', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('non vincola mai il tono o il modo di pronunciare la parola', () => {
-    // La categoria "voce" non esiste più: se torna, è una regressione voluta a mano.
-    const categorie = new Set(ARCHETYPES.map((archetype) => archetype.category))
-    expect([...categorie].sort()).toEqual(['forma', 'senso', 'tavolo'])
+  it('tiene classi e sottoclassi in numero pari', () => {
+    expect(CLASSI.length).toBe(SOTTOCLASSI.length)
+    expect(CLASSI.length + SOTTOCLASSI.length).toBe(ARCHETYPES.length)
   })
 
-  it('basta a coprire un tavolo pieno senza ripetere nessuno', () => {
-    expect(ARCHETYPES.length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+  it('ha abbastanza classi e sottoclassi per un tavolo pieno', () => {
+    expect(CLASSI.length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+    expect(SOTTOCLASSI.length).toBeGreaterThanOrEqual(MAX_PLAYERS)
   })
 
-  it('la selezione senza trappole non ne lascia passare nessuna', () => {
-    expect(playableArchetypes(true)).toHaveLength(ARCHETYPES.length)
-    expect(playableArchetypes(false).every((archetype) => !archetype.trap)).toBe(true)
+  it('solo le classi possono avere un bersaglio', () => {
+    expect(SOTTOCLASSI.every((archetype) => !archetype.needsTarget)).toBe(true)
   })
 
-  it('dà a ogni giocatore un archetipo diverso', () => {
-    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
-      const assegnati = Object.values(state.archetypeByPlayer).map((a) => a.id)
-      expect(assegnati).toHaveLength(MANY.length)
-      expect(new Set(assegnati).size).toBe(MANY.length)
+  it('scrive il segnaposto del bersaglio in tutte e sole le regole che ne hanno uno', () => {
+    for (const archetype of ARCHETYPES) {
+      expect(archetype.rule.includes('{bersaglio}')).toBe(Boolean(archetype.needsTarget))
     }
   })
 
-  it('con le trappole spente non ne lascia passare nessuna', () => {
-    for (const state of gamesOverSeeds(MANY, { ...SETTINGS, trapsEnabled: false })) {
-      for (const archetype of Object.values(state.archetypeByPlayer)) {
-        expect(archetype.trap).toBeFalsy()
+  it('mette il nome del bersaglio nella regola, senza lasciare segnaposti', () => {
+    const conBersaglio = CLASSI.filter((archetype) => archetype.needsTarget)
+    for (const archetype of conBersaglio) {
+      const regola = archetypeRule(archetype, 'Bea')
+      expect(regola).toContain('Bea')
+      expect(regola).not.toContain('{bersaglio}')
+    }
+  })
+
+  it('dà a ogni giocatore una classe e una sottoclasse diverse dalle altre', () => {
+    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
+      const carte = Object.values(state.archetypesByPlayer)
+      expect(carte).toHaveLength(MANY.length)
+      expect(new Set(carte.map((c) => c.classe.id)).size).toBe(MANY.length)
+      expect(new Set(carte.map((c) => c.sottoclasse.id)).size).toBe(MANY.length)
+      for (const carta of carte) {
+        expect(carta.classe.kind).toBe('classe')
+        expect(carta.sottoclasse.kind).toBe('sottoclasse')
+      }
+    }
+  })
+
+  it('sorteggia un bersaglio solo per le classi che lo chiedono, e mai te stesso', () => {
+    for (const state of gamesOverSeeds(PLAYERS, SETTINGS)) {
+      for (const player of state.players) {
+        const carta = state.archetypesByPlayer[player.id]
+        if (!carta.classe.needsTarget) {
+          expect(carta.targetName).toBeNull()
+          continue
+        }
+        expect(carta.targetName).not.toBeNull()
+        expect(carta.targetName).not.toBe(player.name)
+        expect(state.players.map((p) => p.name)).toContain(carta.targetName)
       }
     }
   })
@@ -332,7 +358,10 @@ describe('archetipi', () => {
   it('pesca a caso, quindi prima o poi escono tutti', () => {
     const usciti = new Set<string>()
     for (const state of gamesOverSeeds(MANY, SETTINGS)) {
-      for (const archetype of Object.values(state.archetypeByPlayer)) usciti.add(archetype.id)
+      for (const carta of Object.values(state.archetypesByPlayer)) {
+        usciti.add(carta.classe.id)
+        usciti.add(carta.sottoclasse.id)
+      }
     }
     expect(usciti.size).toBe(ARCHETYPES.length)
   })
