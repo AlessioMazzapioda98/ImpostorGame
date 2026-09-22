@@ -78,24 +78,10 @@ export const ARCHETYPES: Archetype[] = [
     category: 'forma',
   },
   {
-    id: 'logorroico',
-    name: 'Il Logorroico',
-    rule: 'Non ti basta una parola: devi dirne due, e devono stare bene insieme.',
-    emoji: '💬',
-    category: 'forma',
-  },
-  {
     id: 'straniero',
     name: 'Lo Straniero',
     rule: "Devi dire la tua parola in una lingua che non è l'italiano.",
     emoji: '🌍',
-    category: 'forma',
-  },
-  {
-    id: 'plurale',
-    name: 'Il Plurale',
-    rule: 'La tua parola deve essere al plurale.',
-    emoji: '👥',
     category: 'forma',
   },
 
