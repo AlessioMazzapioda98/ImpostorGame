@@ -187,6 +187,31 @@ export function SetupScreen({
         </section>
 
         <section className="card stack">
+          <h2>Tempo per dire la parola</h2>
+          <div className="chips">
+            {([10, 15, 20, 30, 0] as const).map((quanti) => (
+              <button
+                key={quanti}
+                type="button"
+                className="chip"
+                aria-pressed={settings.answerSeconds === quanti}
+                onClick={() => {
+                  vibra('tocco')
+                  onSettingsChange({ ...settings, answerSeconds: quanti })
+                }}
+              >
+                {quanti === 0 ? 'Nessun limite' : `${quanti}s`}
+              </button>
+            ))}
+          </div>
+          <p className="muted">
+            Se il tempo finisce prima che tu abbia detto la parola prendi un cartellino giallo, poi
+            puoi dirla con calma. Al secondo cartellino sei fuori. Senza limite non ci sono
+            cartellini.
+          </p>
+        </section>
+
+        <section className="card stack">
           <h2>Come si vota</h2>
           <div className="chips">
             {(

@@ -15,6 +15,9 @@
   --accent: #8f7dff;
   --accent-strong: #6c53ff;
   --danger: #ff6b81;
+  /* Il giallo del cartellino: usato solo per i cartellini e per il conto
+     alla rovescia agli sgoccioli, così vuol dire sempre la stessa cosa. */
+  --giallo: #fbbf24;
   --success: #4ade80;
   --radius: 16px;
   --radius-lg: 24px;
@@ -1137,4 +1140,43 @@ input[type='text']:focus {
 .bersaglio-ripetuto {
   color: var(--accent);
   font-weight: 800;
+}
+
+/* --- cartellini ------------------------------------------------------------
+   Il conto alla rovescia per parlare sta in mezzo al tavolo, quindi è grande:
+   lo devono vedere tutti, non solo chi ha il telefono davanti. */
+
+.conto-grosso {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  margin: 2px 0;
+}
+
+/* Sotto i cinque secondi il numero cambia colore invece di lampeggiare: il
+   lampeggio, su un tavolo che sta già parlando sopra, si nota meno. */
+.conto-scarso {
+  color: var(--giallo);
+}
+
+.turno-sforato {
+  border-color: var(--giallo);
+}
+
+/* Un rettangolino come il cartellino vero dell'arbitro. */
+.cartellino {
+  width: 11px;
+  height: 15px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.cartellino-giallo {
+  background: var(--giallo);
+}
+
+.cartellino-rosso {
+  background: var(--danger);
 }
