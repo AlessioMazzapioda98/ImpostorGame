@@ -30,8 +30,6 @@ export interface Archetype {
   category: ArchetypeCategory
   /** Vero se può farti sembrare l'impostore anche quando sei innocente. */
   trap?: boolean
-  /** Vero se la regola guarda la parola detta dal giocatore precedente. */
-  dependsOnPrevious?: boolean
 }
 
 export interface Settings {

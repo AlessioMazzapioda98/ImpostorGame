@@ -67,10 +67,9 @@ significato o il voto, e dichiara due cose oltre al testo della regola:
   - `tavolo` non tocca la parola, sposta il voto.
 - `trap`, vero se può farti sembrare l'impostore anche quando sei innocente.
 
-`assignArchetypes` in `src/game/engine.ts` segue l'ordine di parola e tiene conto di
-entrambi: alterna le categorie invece di ammucchiarle, non supera il tetto di trappole
-(`trapBudget`, circa una ogni tre giocatori) e non dà mai a chi apre il giro una regola
-che guarda la parola precedente, né due di quelle regole a giocatori consecutivi.
+`assignArchetypes` in `src/game/engine.ts` li pesca a caso: un archetipo a testa da un
+mazzo mescolato, senza bilanciare le categorie e senza tetti. Se i giocatori superano
+gli archetipi disponibili il mazzo si rimescola, quindi qualcuno può ripetersi.
 
 Con `settings.trapsEnabled` a falso restano solo gli archetipi che complicano la parola
 senza far perdere nessuno per sbaglio. Il valore predefinito è vero.

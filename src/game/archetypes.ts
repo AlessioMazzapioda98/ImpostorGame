@@ -10,21 +10,19 @@ import type { Archetype, ArchetypeCategory } from './types'
  * deve capire. Ogni archetipo qui dentro vincola la parola, il suo significato o il
  * voto.
  *
- * Oltre al testo ognuno dichiara due cose, che servono a distribuirli bene
- * (vedi `assignArchetypes` in engine.ts):
- * - `category`, cioè su cosa mette le mani;
- * - `trap`, vero se può farti sembrare l'impostore anche quando sei innocente.
+ * Oltre al testo ognuno dichiara `category`, cioè su cosa mette le mani, e `trap`,
+ * vero se può farti sembrare l'impostore anche quando sei innocente. In partita
+ * vengono pescati a caso: vedi `assignArchetypes` in engine.ts.
  */
 export const ARCHETYPES: Archetype[] = [
   // --- forma: vincolano com'è fatta la parola, e il tavolo può verificarlo dopo ---
   {
     id: 'poeta',
     name: 'Il Poeta',
-    rule: 'La tua parola deve fare rima con quella detta dal giocatore prima di te.',
+    rule: 'La tua parola deve fare rima con quella detta dal giocatore prima di te. Se apri tu il giro, sei libero.',
     emoji: '🪶',
     category: 'forma',
     trap: true,
-    dependsOnPrevious: true,
   },
   {
     id: 'omonimo',

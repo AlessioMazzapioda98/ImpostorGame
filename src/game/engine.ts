@@ -2,7 +2,6 @@ import { playableArchetypes } from './archetypes'
 import { WORD_PACKS } from './words'
 import type {
   Archetype,
-  ArchetypeCategory,
   GameState,
   Player,
   PlayerId,
@@ -40,16 +39,9 @@ function pickEntry(packIds: string[], rng: Rng): { entry: WordEntry; packName: s
   return pool[Math.floor(rng() * pool.length)]
 }
 
-/** Quante trappole può reggere un tavolo senza che vincere diventi una lotteria. */
-export function trapBudget(playerCount: number): number {
-  return Math.max(1, Math.ceil(playerCount / 3))
-}
-
 /**
- * Distribuisce un archetipo a testa seguendo l'ordine di parola, con tre accortezze:
- * le categorie si alternano invece di ammucchiarsi, le trappole hanno un tetto, e chi
- * apre il giro non riceve mai una regola che guarda la parola precedente (né due di
- * quelle regole finiscono su giocatori consecutivi).
+ * Un archetipo a testa, pescati da un mazzo mescolato e basta: nessun bilanciamento
+ * fra categorie, nessun tetto alle trappole.
  */
 function assignArchetypes(
   order: PlayerId[],
@@ -60,34 +52,12 @@ function assignArchetypes(
   if (available.length === 0) return {}
 
   const assigned: Record<PlayerId, Archetype> = {}
-  const usedByCategory: Record<ArchetypeCategory, number> = { forma: 0, senso: 0, tavolo: 0 }
   let pool = shuffle(available, rng)
-  let trapsLeft = trapBudget(order.length)
-  let previous: Archetype | null = null
-
-  for (let i = 0; i < order.length; i++) {
-    // Con pochi archetipi disponibili e tanti giocatori si ricomincia da capo.
+  for (const playerId of order) {
+    // Con più giocatori che archetipi si rimescola e si ricomincia.
     if (pool.length === 0) pool = shuffle(available, rng)
-
-    const allowed = pool.filter((archetype) => {
-      if (archetype.dependsOnPrevious && (i === 0 || previous?.dependsOnPrevious)) return false
-      if (archetype.trap && trapsLeft <= 0) return false
-      return true
-    })
-    const candidates = allowed.length > 0 ? allowed : pool
-
-    // Il pool è già mescolato, quindi il primo della categoria meno servita è casuale.
-    const fewest = Math.min(...candidates.map((a) => usedByCategory[a.category]))
-    const chosen =
-      candidates.find((a) => usedByCategory[a.category] === fewest) ?? candidates[0]
-
-    assigned[order[i]] = chosen
-    usedByCategory[chosen.category] += 1
-    if (chosen.trap) trapsLeft -= 1
-    pool = pool.filter((a) => a.id !== chosen.id)
-    previous = chosen
+    assigned[playerId] = pool.pop() as Archetype
   }
-
   return assigned
 }
 

@@ -7,7 +7,6 @@ import {
   continueFromVoteResult,
   countVotes,
   createGame,
-  trapBudget,
   isCorrectGuess,
   maxImpostors,
   roleFor,
@@ -237,26 +236,6 @@ describe('archetipi', () => {
     }
   })
 
-  it("non dà a chi apre il giro una regola che guarda la parola precedente", () => {
-    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
-      const catena = state.baseOrder.map((id) => state.archetypeByPlayer[id])
-      expect(catena[0].dependsOnPrevious).toBeFalsy()
-      for (let i = 1; i < catena.length; i++) {
-        const incatenati = catena[i].dependsOnPrevious && catena[i - 1].dependsOnPrevious
-        expect(incatenati).toBeFalsy()
-      }
-    }
-  })
-
-  it('tiene le trappole entro il tetto previsto', () => {
-    for (const players of [PLAYERS, MANY]) {
-      for (const state of gamesOverSeeds(players, SETTINGS)) {
-        const trappole = Object.values(state.archetypeByPlayer).filter((a) => a.trap)
-        expect(trappole.length).toBeLessThanOrEqual(trapBudget(players.length))
-      }
-    }
-  })
-
   it('con le trappole spente non ne lascia passare nessuna', () => {
     for (const state of gamesOverSeeds(MANY, { ...SETTINGS, trapsEnabled: false })) {
       for (const archetype of Object.values(state.archetypeByPlayer)) {
@@ -265,11 +244,11 @@ describe('archetipi', () => {
     }
   })
 
-  it('spalma le categorie invece di ammucchiarle', () => {
-    for (const state of gamesOverSeeds(PLAYERS, SETTINGS)) {
-      const categorie = new Set(Object.values(state.archetypeByPlayer).map((a) => a.category))
-      // Sei giocatori, tre categorie: devono esserci tutte.
-      expect(categorie.size).toBe(3)
+  it('pesca a caso, quindi prima o poi escono tutti', () => {
+    const usciti = new Set<string>()
+    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
+      for (const archetype of Object.values(state.archetypeByPlayer)) usciti.add(archetype.id)
     }
+    expect(usciti.size).toBe(ARCHETYPES.length)
   })
 })
