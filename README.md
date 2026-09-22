@@ -33,9 +33,12 @@ funziona a schermo intero e anche senza connessione.
 
 - Da 4 a 12 giocatori. Sotto i quattro la partita è una votazione sola: se i due
   normali sbagliano restano in due contro l'impostore e hanno già perso.
-- Un impostore fino a sette giocatori, due da otto in su. Il massimo è tre, e sale
-  molto più piano di prima: ogni impostore in più allunga la partita, e più la
-  partita dura più parole sente l'impostore, finché la parola gliela regala il tavolo.
+- Un impostore fino a sette giocatori, due da otto in su, e mai più di due. Un
+  impostore in più non aiuta mai il tavolo, anche se sembrerebbe di sì perché a ogni
+  giro si dicono meno parole vere: servono più votazioni per scoprirli tutti, quindi
+  alla fine di parole vere ne sente di più, e intanto gli impostori votano compatti
+  sullo stesso innocente mentre i normali si sparpagliano. Con tre impostori i
+  giocatori normali vincono meno di una partita su dieci.
 - L'impostore legge la categoria della parola. Vale qualcosa solo se le categorie in
   gioco sono almeno due, altrimenti la sanno già tutti. I giocatori normali la
   categoria non la vedono.
@@ -81,8 +84,13 @@ e un'emoji.
 
 `src/game/bilanciamento.ts` simula migliaia di partite per ogni configurazione, senza
 dover radunare dieci amici. Non imita le parole, che nessun modello sa imitare: imita
-le due cose che decidono la partita, cioè quanto il gruppo vota meglio del caso e
-quanto l'impostore si avvicina alla parola a ogni giro che passa.
+le due cose che decidono la partita. La prima è il voto, giocatore per giocatore,
+perché il punto è proprio che gli impostori si conoscono e votano compatti mentre i
+normali si sparpagliano. La seconda è quello che l'impostore impara, che dipende da
+quante parole vere sono state dette in tutto.
+
+I valori del modello sono stime e non misure sul campo: presi da soli dicono poco, ma
+il confronto fra una configurazione e l'altra regge.
 
 `npm test` esegue anche `bilanciamento.test.ts`, che non controlla il codice ma le
 regole: se una modifica rende una configurazione una vittoria annunciata, o allunga

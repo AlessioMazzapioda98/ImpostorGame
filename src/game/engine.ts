@@ -57,14 +57,15 @@ export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
 }
 
 /**
- * Il massimo consentito. Più impostori allungano la partita, e più la partita dura
- * più parole sente l'impostore: alla fine la parola gliela regala il tavolo. Per
- * questo il tetto sale molto più piano di un impostore ogni tre giocatori.
+ * Il massimo consentito, due. Aggiungere impostori non aiuta mai il tavolo, per due
+ * motivi che si sommano: allungano la partita, e più la partita dura più parole
+ * sente l'impostore, finché la parola gliela regala il tavolo; e soprattutto votano
+ * compatti sullo stesso innocente, mentre i normali che non hanno ancora capito
+ * niente si sparpagliano. Con tre impostori i giocatori normali vincono meno di una
+ * partita su dieci, per questo tre non si possono scegliere.
  */
 export function maxImpostors(playerCount: number): number {
-  if (playerCount <= 5) return 1
-  if (playerCount <= 9) return 2
-  return 3
+  return playerCount <= 5 ? 1 : 2
 }
 
 /**
