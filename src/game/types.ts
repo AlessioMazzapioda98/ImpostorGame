@@ -19,13 +19,7 @@ export interface WordPack {
 }
 
 /** Su cosa mette le mani un archetipo. */
-export type ArchetypeCategory = 'forma' | 'voce' | 'senso' | 'tavolo'
-
-/**
- * Quanto un archetipo ti mette nei guai:
- * 1 fa solo ridere, 2 ti complica la parola, 3 può farti sembrare l'impostore.
- */
-export type ArchetypeLevel = 1 | 2 | 3
+export type ArchetypeCategory = 'forma' | 'senso' | 'tavolo'
 
 export interface Archetype {
   id: string
@@ -34,7 +28,8 @@ export interface Archetype {
   rule: string
   emoji: string
   category: ArchetypeCategory
-  level: ArchetypeLevel
+  /** Vero se può farti sembrare l'impostore anche quando sei innocente. */
+  trap?: boolean
   /** Vero se la regola guarda la parola detta dal giocatore precedente. */
   dependsOnPrevious?: boolean
 }
@@ -43,8 +38,8 @@ export interface Settings {
   impostorCount: number
   packIds: string[]
   archetypesEnabled: boolean
-  /** Fin dove si spinge la cattiveria degli archetipi. Se manca, valgono tutti. */
-  maxArchetypeLevel?: ArchetypeLevel
+  /** Se falso restano solo gli archetipi che non possono farti perdere da innocente. */
+  trapsEnabled?: boolean
   /** Se falso, l'impostore vede solo "sei l'impostore" senza indizio. */
   clueForImpostors: boolean
 }

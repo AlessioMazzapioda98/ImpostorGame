@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ARCHETYPES, archetypesUpToLevel } from './archetypes'
+import { ARCHETYPES, playableArchetypes } from './archetypes'
 import {
   MAX_PLAYERS,
   alivePlayers,
@@ -7,7 +7,7 @@ import {
   continueFromVoteResult,
   countVotes,
   createGame,
-  hardArchetypeBudget,
+  trapBudget,
   isCorrectGuess,
   maxImpostors,
   roleFor,
@@ -214,8 +214,14 @@ describe('archetipi', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('ha abbastanza archetipi morbidi da coprire un tavolo pieno senza ripetizioni', () => {
-    expect(archetypesUpToLevel(1).length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+  it('non vincola mai il tono o il modo di pronunciare la parola', () => {
+    // La categoria "voce" non esiste più: se torna, è una regressione voluta a mano.
+    const categorie = new Set(ARCHETYPES.map((archetype) => archetype.category))
+    expect([...categorie].sort()).toEqual(['forma', 'senso', 'tavolo'])
+  })
+
+  it('ha abbastanza archetipi senza trappole da coprire un tavolo pieno', () => {
+    expect(playableArchetypes(false).length).toBeGreaterThanOrEqual(MAX_PLAYERS)
   })
 
   it('dà a ogni giocatore un archetipo diverso', () => {
@@ -237,19 +243,19 @@ describe('archetipi', () => {
     }
   })
 
-  it('tiene i livelli 3 entro il tetto previsto', () => {
+  it('tiene le trappole entro il tetto previsto', () => {
     for (const players of [PLAYERS, MANY]) {
       for (const state of gamesOverSeeds(players, SETTINGS)) {
-        const cattivi = Object.values(state.archetypeByPlayer).filter((a) => a.level === 3)
-        expect(cattivi.length).toBeLessThanOrEqual(hardArchetypeBudget(players.length))
+        const trappole = Object.values(state.archetypeByPlayer).filter((a) => a.trap)
+        expect(trappole.length).toBeLessThanOrEqual(trapBudget(players.length))
       }
     }
   })
 
-  it('con il livello massimo a 1 lascia solo archetipi da scenetta', () => {
-    for (const state of gamesOverSeeds(MANY, { ...SETTINGS, maxArchetypeLevel: 1 })) {
+  it('con le trappole spente non ne lascia passare nessuna', () => {
+    for (const state of gamesOverSeeds(MANY, { ...SETTINGS, trapsEnabled: false })) {
       for (const archetype of Object.values(state.archetypeByPlayer)) {
-        expect(archetype.level).toBe(1)
+        expect(archetype.trap).toBeFalsy()
       }
     }
   })
@@ -257,8 +263,8 @@ describe('archetipi', () => {
   it('spalma le categorie invece di ammucchiarle', () => {
     for (const state of gamesOverSeeds(PLAYERS, SETTINGS)) {
       const categorie = new Set(Object.values(state.archetypeByPlayer).map((a) => a.category))
-      // Sei giocatori, quattro categorie: devono esserci tutte.
-      expect(categorie.size).toBe(4)
+      // Sei giocatori, tre categorie: devono esserci tutte.
+      expect(categorie.size).toBe(3)
     }
   })
 })
