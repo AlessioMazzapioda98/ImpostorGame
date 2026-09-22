@@ -220,8 +220,13 @@ describe('archetipi', () => {
     expect([...categorie].sort()).toEqual(['forma', 'senso', 'tavolo'])
   })
 
-  it('ha abbastanza archetipi senza trappole da coprire un tavolo pieno', () => {
-    expect(playableArchetypes(false).length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+  it('basta a coprire un tavolo pieno senza ripetere nessuno', () => {
+    expect(ARCHETYPES.length).toBeGreaterThanOrEqual(MAX_PLAYERS)
+  })
+
+  it('la selezione senza trappole non ne lascia passare nessuna', () => {
+    expect(playableArchetypes(true)).toHaveLength(ARCHETYPES.length)
+    expect(playableArchetypes(false).every((archetype) => !archetype.trap)).toBe(true)
   })
 
   it('dà a ogni giocatore un archetipo diverso', () => {
