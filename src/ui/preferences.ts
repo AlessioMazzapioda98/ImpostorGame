@@ -10,7 +10,7 @@ export interface UiPrefs {
   secondiCarta: number
 }
 
-export const SECONDI_CARTA_DEFAULT = 15
+export const SECONDI_CARTA_DEFAULT = 20
 
 export const UI_PREFS_DEFAULT: UiPrefs = {
   tieniPremuto: true,
