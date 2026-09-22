@@ -28,10 +28,10 @@ const VOTE_MODE_ROUNDS = 20
  * di mezzo un indizio che non c'entra niente con il gioco: chi ci mette più tempo a
  * leggere sembra l'impostore anche quando non lo è. Perché funzioni il conto alla
  * rovescia non si deve poter saltare, altrimenti chi chiude prima si tradisce
- * lo stesso, e deve bastare anche alla carta più lunga, quella dell'impostore che
- * legge pure i nomi dei complici.
+ * lo stesso, e deve bastare anche alla carta più lunga: quella di un impostore che
+ * oltre al suo indizio legge i nomi dei complici e i due archetipi.
  */
-export const REVEAL_SECONDS = 15
+export const REVEAL_SECONDS = 20
 
 /**
  * Il tempo della carta è un'impostazione e non una costante perché si può spegnere,

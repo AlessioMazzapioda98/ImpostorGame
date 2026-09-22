@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MAX_PLAYERS,
   MIN_PLAYERS,
+  REVEAL_SECONDS,
   alivePlayers,
   applyVote,
   continueFromVoteResult,
@@ -30,7 +31,7 @@ const SETTINGS: Settings = {
   archetypesEnabled: true,
   clueForImpostors: true,
   voteMode: 'misto',
-  revealSeconds: 15,
+  revealSeconds: REVEAL_SECONDS,
 }
 
 /** Random prevedibile, così le partite di prova sono sempre identiche. */
