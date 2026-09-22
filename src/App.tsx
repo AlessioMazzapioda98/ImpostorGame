@@ -6,6 +6,7 @@ import {
   createGame,
   startVote,
   submitGuess,
+  REVEAL_SECONDS,
 } from './game/engine'
 import { DEFAULT_PACK_IDS } from './game/words'
 import type { GameState, Player, PlayerId, Settings } from './game/types'
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: Settings = {
   archetypesEnabled: true,
   clueForImpostors: true,
   voteMode: 'misto',
+  revealSeconds: REVEAL_SECONDS,
 }
 
 /** I giocatori e le impostazioni restano salvati, così la partita dopo parte subito. */

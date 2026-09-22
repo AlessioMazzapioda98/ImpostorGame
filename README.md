@@ -41,8 +41,9 @@ funziona a schermo intero e anche senza connessione.
   categoria non la vedono.
 - Le carte si consegnano una alla volta, con una schermata di copertura tra un
   giocatore e l'altro. Ogni carta resta aperta lo stesso tempo per tutti
-  (`REVEAL_SECONDS`, 15 secondi), così chi legge più lentamente non sembra
-  l'impostore per questo.
+  (`settings.revealSeconds`, 15 di default), così chi legge più lentamente non sembra
+  l'impostore per questo. Si può spegnere mettendolo a zero, ma spegnendolo il tempo
+  di lettura torna a essere un indizio.
 - Il voto è a volte segreto e a volte a mano alzata, estratto a inizio partita. Il
   primo voto è sempre segreto, perché a mano alzata senza ancora nessun indizio ci si
   accoderebbe soltanto al primo che parla. Si può anche fissarlo su una delle due.

@@ -14,6 +14,7 @@ import {
   suggestedImpostors,
   turnOrderForRound,
   clueIsUseful,
+  revealTimerIsOff,
   voteModeForRound,
 } from './engine'
 import type { Player, Settings } from './types'
@@ -29,6 +30,7 @@ const SETTINGS: Settings = {
   archetypesEnabled: true,
   clueForImpostors: true,
   voteMode: 'misto',
+  revealSeconds: 15,
 }
 
 /** Random prevedibile, così le partite di prova sono sempre identiche. */
@@ -269,5 +271,12 @@ describe('come si vota', () => {
     const first = Array.from({ length: 8 }, (_, i) => voteModeForRound(misto, i + 1))
     const second = Array.from({ length: 8 }, (_, i) => voteModeForRound(misto, i + 1))
     expect(second).toEqual(first)
+  })
+})
+
+describe('il tempo della carta', () => {
+  it('è uguale per tutti e si può spegnere', () => {
+    expect(revealTimerIsOff(SETTINGS)).toBe(false)
+    expect(revealTimerIsOff({ ...SETTINGS, revealSeconds: 0 })).toBe(true)
   })
 })

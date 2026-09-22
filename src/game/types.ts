@@ -33,6 +33,8 @@ export interface Settings {
   /** Se falso, l'impostore vede solo "sei l'impostore", senza sapere la categoria. */
   clueForImpostors: boolean
   voteMode: VoteModeSetting
+  /** Secondi per cui resta aperta la carta, uguali per tutti. Zero spegne il timer. */
+  revealSeconds: number
 }
 
 /** Quello che un singolo giocatore legge quando gli passano il telefono. */

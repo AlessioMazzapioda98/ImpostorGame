@@ -33,6 +33,20 @@ const VOTE_MODE_ROUNDS = 20
  */
 export const REVEAL_SECONDS = 15
 
+/**
+ * Il tempo della carta è un'impostazione e non una costante perché si può spegnere,
+ * ma chi la spegne deve sapere che riapre il buco: senza conto alla rovescia il
+ * tempo di lettura torna a essere un indizio, e chi legge piano sembra l'impostore.
+ */
+export function revealSeconds(settings: Settings): number {
+  return Math.max(0, settings.revealSeconds)
+}
+
+/** Vero quando il tempo di lettura può di nuovo tradire chi legge lentamente. */
+export function revealTimerIsOff(settings: Settings): boolean {
+  return revealSeconds(settings) === 0
+}
+
 export function shuffle<T>(items: readonly T[], rng: Rng = Math.random): T[] {
   const out = items.slice()
   for (let i = out.length - 1; i > 0; i--) {
