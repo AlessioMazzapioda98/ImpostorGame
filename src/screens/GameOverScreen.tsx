@@ -31,16 +31,18 @@ export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
         {state.players.map((player) => {
           const impostor = isImpostor(state, player.id)
           const out = state.eliminatedIds.includes(player.id)
-          const archetype = state.archetypeByPlayer[player.id]
+          const card = state.archetypesByPlayer[player.id]
           return (
             <div key={player.id} className="recap-row">
               <span className="name">
                 {player.name}
-                {archetype && (
+                {card && (
                   <>
                     <br />
                     <span className="muted">
-                      {archetype.emoji} {archetype.name}
+                      {card.classe.emoji} {card.classe.name}
+                      {card.targetName ? ` (${card.targetName})` : ''} ·{' '}
+                      {card.sottoclasse.emoji} {card.sottoclasse.name}
                     </span>
                   </>
                 )}

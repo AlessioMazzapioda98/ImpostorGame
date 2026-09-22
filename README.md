@@ -5,10 +5,12 @@ tranne gli impostori, che ricevono un indizio e i nomi degli altri impostori. A 
 ognuno dice una parola collegata, poi si vota. L'impostore che viene scoperto ha
 un'ultima occasione: se indovina la parola, vincono gli impostori.
 
-In più, ogni giocatore riceve un **archetipo** insieme alla propria carta: un vincolo
-su quello che può dire al proprio turno (Il Poeta deve rimare, Il Minimalista non può
-superare le cinque lettere, Il Goloso deve parlare di cibo qualunque sia la parola
-segreta). Gli archetipi valgono per tutti, impostori compresi, così non tradiscono il
+In più, come in un gioco di ruolo, ogni giocatore riceve due archetipi insieme alla
+propria carta: una **classe**, che vincola come si comporta durante la discussione e al
+voto (L'Accusatore deve prendersela con una persona sorteggiata dal gioco, Il Silenzioso
+non può parlare), e una **sottoclasse**, che vincola le parole che può dire al proprio
+turno (Il Minimalista non supera le cinque lettere, Il Goloso parla di cibo qualunque
+sia la parola segreta). Valgono per tutti, impostori compresi, così non tradiscono il
 ruolo.
 
 ## Come si avvia
@@ -44,7 +46,7 @@ src/game/      logica pura, senza React: stato della partita, voti, vittoria
   types.ts       i tipi condivisi
   engine.ts      creazione partita, carte, votazione, fine partita
   words.ts       le categorie di parole con il relativo indizio
-  archetypes.ts  gli archetipi, con categoria e livello
+  archetypes.ts  gli archetipi: classi e sottoclassi
   engine.test.ts i test della logica
 src/screens/   una schermata per ogni fase: consegna, giro, voto, esito
 src/App.tsx    tiene lo stato della partita e sceglie la schermata
@@ -55,24 +57,23 @@ e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
 
 ## Gli archetipi
 
-Stanno in `src/game/archetypes.ts`. Nessuno di loro riguarda il tono o il modo di
-pronunciare la parola: cantare o sussurrare fa ridere per due secondi e non cambia
-niente di quello che il tavolo deve capire. Ognuno vincola la parola, il suo
-significato o il voto, e dichiara due cose oltre al testo della regola:
+Stanno in `src/game/archetypes.ts`, in un solo elenco diviso da `kind`:
 
-- `category`, cioè su cosa mette le mani.
-  - `forma` vincola com'è fatta la parola, e il tavolo può verificarlo dopo (rima,
-    lunghezza, lettere, lingua).
-  - `senso` vincola cosa può significare, quindi sporca la deduzione.
-  - `tavolo` non tocca la parola, sposta il voto.
-- `trap`, vero se può farti sembrare l'impostore anche quando sei innocente.
+- `classe` vincola il comportamento nella discussione e al voto. Sono tredici.
+- `sottoclasse` vincola le parole che puoi dire al tuo turno. Sono tredici.
 
-`assignArchetypes` in `src/game/engine.ts` li pesca a caso: un archetipo a testa da un
-mazzo mescolato, senza bilanciare le categorie e senza tetti. Se i giocatori superano
-gli archetipi disponibili il mazzo si rimescola, quindi qualcuno può ripetersi.
+Nessuno dei due riguarda il tono o il modo di pronunciare la parola: cantare o
+sussurrare fa ridere per due secondi e non cambia niente di quello che il tavolo deve
+capire.
 
-Con `settings.trapsEnabled` a falso restano solo gli archetipi che complicano la parola
-senza far perdere nessuno per sbaglio. Il valore predefinito è vero.
+Le classi con `needsTarget` nominano un altro giocatore, che il gioco sorteggia a inizio
+partita fra gli altri e scrive sulla carta. Nel testo della regola sta il segnaposto
+`{bersaglio}`, e `archetypeRule(archetype, targetName)` ci mette il nome vero: le regole
+sono scritte in modo da non prendere genere, perché il bersaglio può essere chiunque.
+
+`assignArchetypeCards` in `src/game/engine.ts` pesca da due mazzi mescolati, una classe
+e una sottoclasse a testa, senza bilanciamenti e senza tetti. Se i giocatori superano
+gli archetipi di un mazzo, quel mazzo si rimescola e qualcuno può ripetersi.
 
 ## Aggiungere parole
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { archetypeRule } from '../game/archetypes'
 import { roleFor } from '../game/engine'
 import type { GameState } from '../game/types'
 
@@ -73,13 +74,22 @@ export function RevealScreen({ state, onNext }: Props) {
         )}
       </div>
 
-      {role.archetype && (
+      {role.archetypes && (
         <div className="archetype stack">
-          <p className="eyebrow">Il tuo archetipo</p>
+          <p className="eyebrow">La tua classe</p>
           <p className="archetype-name">
-            {role.archetype.emoji} {role.archetype.name}
+            {role.archetypes.classe.emoji} {role.archetypes.classe.name}
           </p>
-          <p className="muted">{role.archetype.rule}</p>
+          <p className="muted">
+            {archetypeRule(role.archetypes.classe, role.archetypes.targetName)}
+          </p>
+          <p className="eyebrow" style={{ marginTop: 14 }}>
+            La tua sottoclasse
+          </p>
+          <p className="archetype-name">
+            {role.archetypes.sottoclasse.emoji} {role.archetypes.sottoclasse.name}
+          </p>
+          <p className="muted">{role.archetypes.sottoclasse.rule}</p>
         </div>
       )}
 

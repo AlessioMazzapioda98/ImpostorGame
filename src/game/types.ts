@@ -18,26 +18,35 @@ export interface WordPack {
   entries: WordEntry[]
 }
 
-/** Su cosa mette le mani un archetipo. */
-export type ArchetypeCategory = 'forma' | 'senso' | 'tavolo'
+/** Un archetipo vincola come ti comporti (classe) o cosa puoi dire (sottoclasse). */
+export type ArchetypeKind = 'classe' | 'sottoclasse'
 
 export interface Archetype {
   id: string
   name: string
-  /** Il vincolo, scritto rivolgendosi al giocatore. */
+  /**
+   * Il vincolo, scritto rivolgendosi al giocatore. Con `needsTarget` contiene
+   * `{bersaglio}`: usa `archetypeRule` per leggerla col nome vero.
+   */
   rule: string
   emoji: string
-  category: ArchetypeCategory
-  /** Vero se può farti sembrare l'impostore anche quando sei innocente. */
-  trap?: boolean
+  kind: ArchetypeKind
+  /** Vero se il gioco deve sorteggiare un altro giocatore da nominare nella regola. */
+  needsTarget?: boolean
+}
+
+/** Quello che un giocatore si ritrova sulla carta: una classe e una sottoclasse. */
+export interface ArchetypeCard {
+  classe: Archetype
+  sottoclasse: Archetype
+  /** Chi la classe ti dice di accusare, difendere o sorvegliare. */
+  targetName: string | null
 }
 
 export interface Settings {
   impostorCount: number
   packIds: string[]
   archetypesEnabled: boolean
-  /** Se falso restano solo gli archetipi che non possono farti perdere da innocente. */
-  trapsEnabled?: boolean
   /** Se falso, l'impostore vede solo "sei l'impostore" senza indizio. */
   clueForImpostors: boolean
 }
@@ -52,7 +61,8 @@ export interface PlayerRole {
   clue: string | null
   /** Gli altri impostori, visibili solo agli impostori. */
   fellowImpostorNames: string[]
-  archetype: Archetype | null
+  /** Classe e sottoclasse del giocatore, con il bersaglio della classe. */
+  archetypes: ArchetypeCard | null
 }
 
 export type Phase =
@@ -80,7 +90,7 @@ export interface GameState {
   entry: WordEntry
   packName: string
   impostorIds: PlayerId[]
-  archetypeByPlayer: Record<PlayerId, Archetype>
+  archetypesByPlayer: Record<PlayerId, ArchetypeCard>
   eliminatedIds: PlayerId[]
   /** Indice del giocatore a cui tocca leggere la carta, durante la consegna. */
   revealIndex: number
