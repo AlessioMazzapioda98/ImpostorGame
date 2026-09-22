@@ -119,7 +119,8 @@ gli archetipi di un mazzo, quel mazzo si rimescola e qualcuno può ripetersi.
 Le parole stanno in `src/game/words.ts`, raggruppate per categoria: basta la parola,
 perché l'indizio è il nome della categoria. Gli archetipi stanno in
 `src/game/archetypes.ts`: servono un nome, la regola scritta rivolgendosi al giocatore,
-un'emoji, la `category` e il flag `trap`.
+un'emoji e il `kind`, `classe` o `sottoclasse`. Una classe che nomina qualcuno scrive
+`{bersaglio}` nella regola e dichiara `needsTarget`.
 
 ## Controllare il bilanciamento
 
@@ -141,3 +142,10 @@ quindi stringere o allargare senza rifare i conti sul resto.
 `npm test` esegue anche `bilanciamento.test.ts`, che non controlla il codice ma le
 regole: se una modifica rende una configurazione una vittoria annunciata, o allunga
 troppo le partite, quei test si rompono.
+
+## Quello che il motore sa fare e l'app non mostra ancora
+
+I cartellini esistono come regola (`giveYellowCard`, `yellowCardsOf`,
+`isOnLastWarning` in `src/game/engine.ts`) ma non ha ancora una schermata: manca il
+modo di darli durante il giro di parole e il comando per cambiare `answerSeconds`
+nelle impostazioni.
