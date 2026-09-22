@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
 interface Props {
+  /** Frazione di tempo che resta, da 1 a 0. null quando non c'è tempo fisso. */
+  quotaTempo: number | null
   premuto: boolean
   tieniPremuto: boolean
   variante: 'parola' | 'impostore'
@@ -14,7 +16,15 @@ interface Props {
  * così nessuno può sbirciarlo di lato né ritrovarlo in uno screenshot: si vede
  * solo il dorso finché il dito resta appoggiato.
  */
-export function SecretCard({ premuto, tieniPremuto, variante, inizia, finisci, children }: Props) {
+export function SecretCard({
+  quotaTempo,
+  premuto,
+  tieniPremuto,
+  variante,
+  inizia,
+  finisci,
+  children,
+}: Props) {
   return (
     <button
       type="button"
@@ -36,6 +46,13 @@ export function SecretCard({ premuto, tieniPremuto, variante, inizia, finisci, c
       }}
       onBlur={finisci}
     >
+      {quotaTempo !== null && (
+        <span
+          className="carta-tempo"
+          aria-hidden="true"
+          style={{ ['--quota' as string]: `${quotaTempo * 100}%` }}
+        />
+      )}
       {premuto ? (
         <div className="carta-contenuto">{children}</div>
       ) : (

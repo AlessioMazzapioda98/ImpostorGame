@@ -9,7 +9,7 @@ const ATTESA_MS = 260
  * richiude da sola: è il modo più sicuro di leggere qualcosa mentre quattro
  * amici ti guardano, perché non resta niente sullo schermo se posi il telefono.
  */
-export function useHoldToReveal(abilitato: boolean) {
+export function useHoldToReveal(abilitato: boolean, bloccato = false) {
   const [premuto, setPremuto] = useState(false)
   const [giaVisto, setGiaVisto] = useState(false)
   const timer = useRef<number | null>(null)
@@ -22,7 +22,7 @@ export function useHoldToReveal(abilitato: boolean) {
   }
 
   const inizia = useCallback(() => {
-    if (premuto || timer.current !== null) return
+    if (bloccato || premuto || timer.current !== null) return
     if (!abilitato) {
       // Senza tenere premuto la carta si apre e si chiude a tocchi alterni.
       setPremuto((valore) => !valore)
@@ -36,7 +36,7 @@ export function useHoldToReveal(abilitato: boolean) {
       setGiaVisto(true)
       vibra('rivelazione')
     }, ATTESA_MS)
-  }, [abilitato, premuto])
+  }, [abilitato, bloccato, premuto])
 
   const finisci = useCallback(() => {
     annullaTimer()
@@ -49,6 +49,13 @@ export function useHoldToReveal(abilitato: boolean) {
     setPremuto(false)
     setGiaVisto(false)
   }, [])
+
+  // Scaduto il tempo la carta si chiude da sola e non si riapre più.
+  useEffect(() => {
+    if (!bloccato) return
+    annullaTimer()
+    setPremuto(false)
+  }, [bloccato])
 
   useEffect(() => annullaTimer, [])
 

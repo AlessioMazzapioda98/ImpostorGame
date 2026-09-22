@@ -103,6 +103,7 @@ export function App() {
           <RevealScreen
             state={game}
             tieniPremuto={uiPrefs.tieniPremuto}
+            secondiCarta={uiPrefs.secondiCarta}
             onNext={() => setGame(advanceReveal(game))}
           />
         )}

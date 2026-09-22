@@ -6,11 +6,16 @@ export interface UiPrefs {
   /** Se vero la carta segreta si vede solo finché tieni premuto il dito. */
   tieniPremuto: boolean
   vibrazioni: boolean
+  /** Secondi uguali per tutti con la carta in mano. 0 spegne il tempo fisso. */
+  secondiCarta: number
 }
+
+export const SECONDI_CARTA_DEFAULT = 15
 
 export const UI_PREFS_DEFAULT: UiPrefs = {
   tieniPremuto: true,
   vibrazioni: true,
+  secondiCarta: SECONDI_CARTA_DEFAULT,
 }
 
 const CHIAVE = 'impostor-ui-v1'

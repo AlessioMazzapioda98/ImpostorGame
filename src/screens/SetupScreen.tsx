@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { MAX_PLAYERS, MIN_PLAYERS, maxImpostors } from '../game/engine'
 import { WORD_PACKS } from '../game/words'
 import type { Player, Settings } from '../game/types'
-import type { UiPrefs } from '../ui/preferences'
+import { SECONDI_CARTA_DEFAULT, type UiPrefs } from '../ui/preferences'
 import { Avatar } from '../ui/Avatar'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
 import { vibra } from '../ui/haptics'
@@ -199,6 +199,17 @@ export function SetupScreen({
               titolo="Scopri tenendo premuto"
               nota="La carta resta visibile solo finché tieni il dito sullo schermo. Spegnilo per aprirla e chiuderla con un tocco."
               onCambia={() => onUiPrefsChange({ ...uiPrefs, tieniPremuto: !uiPrefs.tieniPremuto })}
+            />
+            <Interruttore
+              acceso={uiPrefs.secondiCarta > 0}
+              titolo={`Tempo fisso per la carta, ${SECONDI_CARTA_DEFAULT} secondi`}
+              nota="Tutti tengono il telefono per lo stesso tempo, così chi legge più a lungo non si tradisce."
+              onCambia={() =>
+                onUiPrefsChange({
+                  ...uiPrefs,
+                  secondiCarta: uiPrefs.secondiCarta > 0 ? 0 : SECONDI_CARTA_DEFAULT,
+                })
+              }
             />
             <Interruttore
               acceso={uiPrefs.vibrazioni}

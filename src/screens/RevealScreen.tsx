@@ -1,22 +1,43 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { roleFor } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
 import { Handoff } from '../ui/Handoff'
 import { SecretCard } from '../ui/SecretCard'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
+import { useCountdown } from '../ui/useCountdown'
 import { useHoldToReveal } from '../ui/useHoldToReveal'
 import { vibra } from '../ui/haptics'
 
 interface Props {
   state: GameState
   tieniPremuto: boolean
+  /** Secondi uguali per tutti con la carta in mano. 0 = nessun tempo fisso. */
+  secondiCarta: number
   onNext: () => void
 }
 
-export function RevealScreen({ state, tieniPremuto, onNext }: Props) {
+export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Props) {
   const [consegnato, setConsegnato] = useState(false)
-  const { premuto, giaVisto, inizia, finisci, chiudi } = useHoldToReveal(tieniPremuto)
+  const aTempo = secondiCarta > 0
+  const durataMs = secondiCarta * 1000
+
+  // Il conto parte alla prima apertura della carta, non quando si prende in
+  // mano il telefono: armeggiare con lo schermo non deve rubare secondi.
+  const [partito, setPartito] = useState(false)
+  const rimastiMs = useCountdown(aTempo && partito, durataMs)
+  const scaduto = aTempo && partito && rimastiMs === 0
+
+  const { premuto, giaVisto, inizia, finisci, chiudi } = useHoldToReveal(tieniPremuto, scaduto)
+
+  useEffect(() => {
+    if (giaVisto) setPartito(true)
+  }, [giaVisto])
+
+  // Finché il tempo scorre il pulsante non c'è: così tutti tengono il telefono
+  // per gli stessi secondi e non si capisce chi ha letto di corsa.
+  const puoProseguire = giaVisto && (!aTempo || scaduto)
+  const secondiRimasti = Math.ceil(rimastiMs / 1000)
 
   const player = state.players[state.revealIndex]
   const role = roleFor(state, player.id)
@@ -41,6 +62,7 @@ export function RevealScreen({ state, tieniPremuto, onNext }: Props) {
   const chiudiEProsegui = () => {
     vibra('conferma')
     chiudi()
+    setPartito(false)
     setConsegnato(false)
     onNext()
   }
@@ -55,6 +77,7 @@ export function RevealScreen({ state, tieniPremuto, onNext }: Props) {
         </div>
 
         <SecretCard
+          quotaTempo={aTempo && partito ? rimastiMs / durataMs : null}
           premuto={premuto}
           tieniPremuto={tieniPremuto}
           variante={role.isImpostor ? 'impostore' : 'parola'}
@@ -115,10 +138,15 @@ export function RevealScreen({ state, tieniPremuto, onNext }: Props) {
       </ScreenBody>
 
       <ScreenActions>
-        {giaVisto ? (
+        {puoProseguire ? (
           <button type="button" className="btn" onClick={chiudiEProsegui}>
             {ultimo ? 'Ho capito, si comincia' : 'Ho capito, passa al prossimo'}
           </button>
+        ) : giaVisto ? (
+          <p className="suggerimento">
+            Ancora <strong className="conto">{secondiRimasti}</strong>{' '}
+            {secondiRimasti === 1 ? 'secondo' : 'secondi'}, uguali per tutti
+          </p>
         ) : (
           <p className="suggerimento">
             {tieniPremuto

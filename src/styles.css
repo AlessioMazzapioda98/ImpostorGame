@@ -430,6 +430,8 @@ input[type='text']:focus {
 }
 
 .carta {
+  position: relative;
+  overflow: hidden;
   flex: 1 0 auto;
   min-height: 300px;
   width: 100%;
@@ -1048,4 +1050,22 @@ input[type='text']:focus {
   font-size: 14px;
   line-height: 1.45;
   color: var(--text-dim);
+}
+
+/* La barra del tempo sulla carta: si svuota mentre scorrono i secondi uguali
+   per tutti, e si vede sia a carta aperta sia a carta chiusa. */
+.carta-tempo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: var(--quota, 100%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  transition: width 120ms linear;
+}
+
+.conto {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
