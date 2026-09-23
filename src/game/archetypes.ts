@@ -1,4 +1,4 @@
-import type { Archetype } from './types'
+import type { Archetype, ArchetypeCard } from './types'
 
 /**
  * Ogni giocatore riceve due archetipi insieme alla propria carta, come in un gioco di
@@ -7,6 +7,11 @@ import type { Archetype } from './types'
  *
  * - La **classe** vincola come ti comporti durante la discussione e al voto.
  * - La **sottoclasse** vincola le parole che puoi dire al tuo turno.
+ *
+ * I nomi sono pensati per attaccarsi: classe più sottoclasse devono suonare come un
+ * nome solo, perché è così che se ne parla dopo la partita ("mi è capitato il Testimone
+ * Poeta"). Per questo il nome non contiene l'articolo, sta in `article` sulla classe,
+ * ed è sempre una parola sola, maschile e singolare, che regge anche un seguito.
  *
  * Nessuno dei due riguarda il tono o il modo di pronunciare: cantare o sussurrare fa
  * ridere per due secondi e non cambia niente di quello che il tavolo deve capire.
@@ -18,14 +23,16 @@ export const ARCHETYPES: Archetype[] = [
   // ---------------------------------------------------------------- classi ---
   {
     id: 'matto',
-    name: 'Il Matto',
+    name: 'Matto',
+    article: 'il',
     rule: 'Nessuna regola, nemmeno la tua sottoclasse: fai quello che ti pare.',
     emoji: '🃏',
     kind: 'classe',
   },
   {
     id: 'accusatore',
-    name: "L'Accusatore",
+    name: 'Accusatore',
+    article: 'l’',
     rule: 'Accusa {bersaglio} a ogni discussione e vota sempre {bersaglio}.',
     emoji: '👉',
     kind: 'classe',
@@ -33,7 +40,8 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'avvocato',
-    name: "L'Avvocato",
+    name: 'Avvocato',
+    article: 'l’',
     rule: 'Difendi {bersaglio} a ogni discussione e non votare mai {bersaglio}.',
     emoji: '🛡️',
     kind: 'classe',
@@ -41,7 +49,8 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'testimone',
-    name: 'Il Testimone',
+    name: 'Testimone',
+    article: 'il',
     rule: 'Prima di ogni voto giudica {bersaglio} ad alta voce: innocente o colpevole.',
     emoji: '👁️',
     kind: 'classe',
@@ -49,115 +58,131 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'voltagabbana',
-    name: 'Il Voltagabbana',
+    name: 'Voltagabbana',
+    article: 'il',
     rule: 'A ogni votazione vota una persona diversa dalla precedente.',
     emoji: '🔄',
     kind: 'classe',
   },
   {
     id: 'silenzioso',
-    name: 'Il Silenzioso',
+    name: 'Silenzioso',
+    article: 'il',
     rule: 'Dopo la tua parola non puoi più parlare, per tutta la partita.',
     emoji: '🤐',
     kind: 'classe',
   },
   {
     id: 'gregario',
-    name: 'Il Gregario',
+    name: 'Gregario',
+    article: 'il',
     rule: 'Appoggia sempre la prima accusa della discussione.',
     emoji: '🐑',
     kind: 'classe',
   },
   {
     id: 'democratico',
-    name: 'Il Democratico',
+    name: 'Democratico',
+    article: 'il',
     rule: 'Vota chi si è preso più accuse durante la discussione.',
     emoji: '🗳️',
     kind: 'classe',
   },
   {
-    id: 'causapersa',
-    name: 'La Causa Persa',
+    id: 'crocerossino',
+    name: 'Crocerossino',
+    article: 'il',
     rule: 'Difendi chi si è preso più accuse, e non votarlo.',
     emoji: '🥀',
     kind: 'classe',
   },
   {
     id: 'vendicativo',
-    name: 'Il Vendicativo',
+    name: 'Vendicativo',
+    article: 'il',
     rule: 'Vota chi ti ha accusato. Se nessuno ti accusa, vota come vuoi.',
     emoji: '😤',
     kind: 'classe',
   },
   {
     id: 'conservatore',
-    name: 'Il Conservatore',
+    name: 'Conservatore',
+    article: 'il',
     rule: 'Vota sempre la stessa persona che hai votato la prima volta.',
     emoji: '⚓',
     kind: 'classe',
   },
   {
     id: 'codardo',
-    name: 'Il Codardo',
+    name: 'Codardo',
+    article: 'il',
     rule: 'Non accusare mai nessuno: puoi solo difendere.',
     emoji: '🐔',
     kind: 'classe',
   },
   {
     id: 'pentito',
-    name: 'Il Pentito',
+    name: 'Pentito',
+    article: 'il',
     rule: 'Prima della seconda votazione dichiara di essere l’impostore.',
     emoji: '🙏',
     kind: 'classe',
   },
 
   // ----------------------------------------------------------- sottoclassi ---
+  {
+    id: 'classico',
+    name: 'Classico',
+    rule: 'Nessun vincolo sulla parola: gioca come all’impostore normale.',
+    emoji: '⚪',
+    kind: 'sottoclasse',
+  },
   // Vincolano com'è fatta la parola, e il tavolo può verificarlo dopo.
   {
     id: 'poeta',
-    name: 'Il Poeta',
+    name: 'Poeta',
     rule: 'Fai rima con la parola detta prima di te. Se apri tu il giro, sei libero.',
     emoji: '🪶',
     kind: 'sottoclasse',
   },
   {
     id: 'omonimo',
-    name: "L'Omonimo",
+    name: 'Omonimo',
     rule: 'Ogni tua parola inizia con la lettera del tuo nome.',
     emoji: '🅰️',
     kind: 'sottoclasse',
   },
   {
     id: 'minimalista',
-    name: 'Il Minimalista',
+    name: 'Minimalista',
     rule: 'Massimo cinque lettere.',
     emoji: '🔹',
     kind: 'sottoclasse',
   },
   {
     id: 'grandioso',
-    name: 'Il Grandioso',
+    name: 'Grandioso',
     rule: 'Almeno nove lettere.',
     emoji: '🗿',
     kind: 'sottoclasse',
   },
   {
-    id: 'raddoppio',
-    name: 'Il Raddoppio',
+    id: 'doppione',
+    name: 'Doppione',
     rule: 'Serve una doppia dentro la parola, come in nonno o pizza.',
     emoji: '🔁',
     kind: 'sottoclasse',
   },
   {
-    id: 'azione',
-    name: "L'Uomo d'Azione",
+    id: 'infinito',
+    name: 'Infinito',
     rule: 'Deve essere un verbo all’infinito.',
     emoji: '🏃',
     kind: 'sottoclasse',
   },
   {
     id: 'straniero',
-    name: 'Lo Straniero',
+    name: 'Straniero',
     rule: 'In una lingua qualsiasi, tranne l’italiano.',
     emoji: '🌍',
     kind: 'sottoclasse',
@@ -165,42 +190,42 @@ export const ARCHETYPES: Archetype[] = [
   // Vincolano cosa può significare la parola, e sporcano la deduzione.
   {
     id: 'salterino',
-    name: 'Il Salterino',
+    name: 'Salterino',
     rule: 'Collegati alla parola segreta in due passaggi, mai in uno.',
     emoji: '🦘',
     kind: 'sottoclasse',
   },
   {
     id: 'basico',
-    name: 'Il Basico',
+    name: 'Basico',
     rule: 'La parola più scontata che esista, quella che direbbe chiunque.',
     emoji: '🥱',
     kind: 'sottoclasse',
   },
   {
     id: 'sam',
-    name: 'Il S.A.M.',
+    name: 'S.A.M.',
     rule: 'Volgare o imbarazzante, di quelle che fanno calare il silenzio.',
     emoji: '🙊',
     kind: 'sottoclasse',
   },
   {
     id: 'goloso',
-    name: 'Il Goloso',
+    name: 'Goloso',
     rule: 'Deve riguardare il cibo, qualunque sia la parola segreta.',
     emoji: '🍝',
     kind: 'sottoclasse',
   },
   {
     id: 'astratto',
-    name: "L'Astratto",
+    name: 'Astratto',
     rule: 'Solo cose che non si toccano: idee, sentimenti, stati d’animo.',
     emoji: '☁️',
     kind: 'sottoclasse',
   },
   {
     id: 'concreto',
-    name: 'Il Concreto',
+    name: 'Concreto',
     rule: 'Solo cose che si possono toccare.',
     emoji: '🧱',
     kind: 'sottoclasse',
@@ -223,4 +248,17 @@ export const SEGNAPOSTO_BERSAGLIO = '{bersaglio}'
 export function archetypeRule(archetype: Archetype, targetName: string | null): string {
   if (!archetype.needsTarget) return archetype.rule
   return archetype.rule.split(SEGNAPOSTO_BERSAGLIO).join(targetName ?? 'il giocatore indicato')
+}
+
+/** Il nome unico della carta: "Testimone Poeta". */
+export function archetypeCardName(card: ArchetypeCard): string {
+  return `${card.classe.name} ${card.sottoclasse.name}`
+}
+
+/** Lo stesso nome con l'articolo davanti, per scriverlo dentro una frase. */
+export function archetypeCardWithArticle(card: ArchetypeCard): string {
+  const articolo = card.classe.article ?? 'il'
+  // L'articolo elidato sta attaccato alla parola, gli altri vogliono lo spazio.
+  const stacco = articolo.endsWith('’') ? '' : ' '
+  return `${articolo}${stacco}${archetypeCardName(card)}`
 }

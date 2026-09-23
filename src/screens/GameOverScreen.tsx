@@ -1,3 +1,4 @@
+import { archetypeCardName } from '../game/archetypes'
 import { isImpostor } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
@@ -41,9 +42,10 @@ export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
                   {player.name}
                   {carta && (
                     <span className="recap-archetipo">
-                      {carta.classe.emoji} {carta.classe.name}
-                      {carta.targetName ? ` (${carta.targetName})` : ''} ·{' '}
-                      {carta.sottoclasse.emoji} {carta.sottoclasse.name}
+                      {carta.classe.emoji}
+                      {carta.sottoclasse.emoji} {archetypeCardName(carta)}
+                      {carta.targetName ? ` (${carta.targetName})` : ''}
+                      {carta.rerolled ? ' · carta cambiata' : ''}
                     </span>
                   )}
                 </span>

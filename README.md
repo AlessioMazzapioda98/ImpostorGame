@@ -98,21 +98,34 @@ e ne restituiscono uno nuovo, quindi è testabile senza aprire il browser.
 
 Stanno in `src/game/archetypes.ts`, in un solo elenco diviso da `kind`:
 
-- `classe` vincola il comportamento nella discussione e al voto. Sono tredici.
-- `sottoclasse` vincola le parole che puoi dire al tuo turno. Sono tredici.
+- `classe` vincola il comportamento nella discussione e al voto.
+- `sottoclasse` vincola le parole che puoi dire al tuo turno. `classico` è quella
+  senza vincoli, per chi in quella partita vuole giocare all'impostore normale.
 
 Nessuno dei due riguarda il tono o il modo di pronunciare la parola: cantare o
 sussurrare fa ridere per due secondi e non cambia niente di quello che il tavolo deve
 capire.
 
+**I nomi si attaccano.** Classe più sottoclasse devono suonare come un nome solo,
+perché è così che se ne parla dopo la partita: «mi è capitato il Testimone Poeta».
+Quindi ogni `name` è una parola sola, maschile e singolare, senza articolo;
+l'articolo sta in `article` sulla classe. `archetypeCardName` compone "Testimone
+Poeta" e `archetypeCardWithArticle` compone "il Testimone Poeta".
+
 Le classi con `needsTarget` nominano un altro giocatore, che il gioco sorteggia a inizio
-partita fra gli altri e scrive sulla carta. Nel testo della regola sta il segnaposto
-`{bersaglio}`, e `archetypeRule(archetype, targetName)` ci mette il nome vero: le regole
-sono scritte in modo da non prendere genere, perché il bersaglio può essere chiunque.
+partita e scrive sulla carta. Nel testo della regola sta il segnaposto `{bersaglio}`, e
+`archetypeRule(archetype, targetName)` ci mette il nome vero: le regole sono scritte in
+modo da non prendere genere, perché il bersaglio può essere chiunque.
 
 `assignArchetypeCards` in `src/game/engine.ts` pesca da due mazzi mescolati, una classe
 e una sottoclasse a testa, senza bilanciamenti e senza tetti. Se i giocatori superano
 gli archetipi di un mazzo, quel mazzo si rimescola e qualcuno può ripetersi.
+
+**Il cambio di carta.** Mentre legge la propria carta, ogni giocatore può rifiutarla una
+volta sola: `rerollArchetypes` ripesca classe, sottoclasse ed eventuale bersaglio, senza
+ridare quello che aveva né quello che ha già un altro. Il campo `rerolled` sulla carta
+dice che il cambio è stato speso. La schermata richiude la carta e fa ripartire il
+tempo, perché quella nuova è tutta da leggere.
 
 ## Aggiungere parole
 

@@ -23,7 +23,13 @@ export type ArchetypeKind = 'classe' | 'sottoclasse'
 
 export interface Archetype {
   id: string
+  /**
+   * Il nome nudo, senza articolo e in una parola sola: classe e sottoclasse si
+   * attaccano per formare un nome unico, tipo "Testimone Poeta".
+   */
   name: string
+  /** L'articolo da usare quando il nome finisce in una frase. Solo sulle classi. */
+  article?: string
   /**
    * Il vincolo, scritto rivolgendosi al giocatore. Con `needsTarget` contiene
    * `{bersaglio}`: usa `archetypeRule` per leggerla col nome vero.
@@ -41,6 +47,8 @@ export interface ArchetypeCard {
   sottoclasse: Archetype
   /** Chi la classe ti dice di accusare, difendere o sorvegliare. */
   targetName: string | null
+  /** Vero quando il giocatore ha già speso il suo unico cambio di carta. */
+  rerolled: boolean
 }
 
 export interface Settings {

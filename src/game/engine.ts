@@ -161,6 +161,7 @@ function assignArchetypeCards(
       classe,
       sottoclasse,
       targetName: classe.needsTarget ? pickTargetName(players, player.id, rng) : null,
+      rerolled: false,
     }
   }
 
@@ -172,6 +173,49 @@ function pickTargetName(players: Player[], playerId: PlayerId, rng: Rng): string
   const others = players.filter((player) => player.id !== playerId)
   if (others.length === 0) return null
   return others[Math.floor(rng() * others.length)].name
+}
+
+/** Fra i candidati, evita quelli già in mano ad altri e quello che hai adesso. */
+function pickDifferent(pool: Archetype[], attuale: Archetype, inUso: Set<string>, rng: Rng): Archetype {
+  const liberi = pool.filter((a) => a.id !== attuale.id && !inUso.has(a.id))
+  // A tavolo pieno può non restare niente di libero: allora basta che cambi.
+  const candidati = liberi.length > 0 ? liberi : pool.filter((a) => a.id !== attuale.id)
+  if (candidati.length === 0) return attuale
+  return candidati[Math.floor(rng() * candidati.length)]
+}
+
+/**
+ * Il cambio di carta, mentre il giocatore sta leggendo la propria: ripesca classe e
+ * sottoclasse e, se serve, un nuovo bersaglio. Si può fare una volta sola, e la carta
+ * nuova non è mai uguale alla vecchia né a quella di un altro, finché ce n'è.
+ */
+export function rerollArchetypes(
+  state: GameState,
+  playerId: PlayerId,
+  rng: Rng = Math.random,
+): GameState {
+  const card = state.archetypesByPlayer[playerId]
+  if (!card || card.rerolled) return state
+
+  const altrui = Object.entries(state.archetypesByPlayer).filter(([id]) => id !== playerId)
+  const classiInUso = new Set(altrui.map(([, altra]) => altra.classe.id))
+  const sottoclassiInUso = new Set(altrui.map(([, altra]) => altra.sottoclasse.id))
+
+  const classe = pickDifferent(CLASSI, card.classe, classiInUso, rng)
+  const sottoclasse = pickDifferent(SOTTOCLASSI, card.sottoclasse, sottoclassiInUso, rng)
+
+  return {
+    ...state,
+    archetypesByPlayer: {
+      ...state.archetypesByPlayer,
+      [playerId]: {
+        classe,
+        sottoclasse,
+        targetName: classe.needsTarget ? pickTargetName(state.players, playerId, rng) : null,
+        rerolled: true,
+      },
+    },
+  }
 }
 
 export function createGame(players: Player[], settings: Settings, rng: Rng = Math.random): GameState {

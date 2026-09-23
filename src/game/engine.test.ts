@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ARCHETYPES, CLASSI, SOTTOCLASSI, archetypeRule } from './archetypes'
+import {
+  ARCHETYPES,
+  CLASSI,
+  SOTTOCLASSI,
+  archetypeCardName,
+  archetypeCardWithArticle,
+  archetypeRule,
+} from './archetypes'
 import {
   ANSWER_SECONDS,
   MAX_PLAYERS,
@@ -12,6 +19,7 @@ import {
   countVotes,
   createGame,
   isCorrectGuess,
+  rerollArchetypes,
   maxImpostors,
   roleFor,
   submitGuess,
@@ -305,9 +313,40 @@ describe('archetipi', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('tiene classi e sottoclassi in numero pari', () => {
-    expect(CLASSI.length).toBe(SOTTOCLASSI.length)
+  it('tiene classi e sottoclassi più o meno in pari', () => {
+    expect(Math.abs(CLASSI.length - SOTTOCLASSI.length)).toBeLessThanOrEqual(1)
     expect(CLASSI.length + SOTTOCLASSI.length).toBe(ARCHETYPES.length)
+  })
+
+  it('ha nomi che si attaccano: una parola sola, senza articolo', () => {
+    for (const archetype of ARCHETYPES) {
+      expect(archetype.name).not.toMatch(/^(Il|Lo|La|L’|L')\s*/)
+      // "S.A.M." è l'unico con i punti, e resta così perché l'ha chiesto Alessio.
+      expect(archetype.name.split(' ')).toHaveLength(1)
+    }
+  })
+
+  it('dà un articolo a ogni classe e a nessuna sottoclasse', () => {
+    for (const classe of CLASSI) expect(classe.article).toBeTruthy()
+    for (const sottoclasse of SOTTOCLASSI) expect(sottoclasse.article).toBeUndefined()
+  })
+
+  it('compone il nome della carta come un nome solo', () => {
+    const carta = {
+      classe: CLASSI.find((c) => c.id === 'testimone')!,
+      sottoclasse: SOTTOCLASSI.find((c) => c.id === 'poeta')!,
+      targetName: null,
+      rerolled: false,
+    }
+    expect(archetypeCardName(carta)).toBe('Testimone Poeta')
+    expect(archetypeCardWithArticle(carta)).toBe('il Testimone Poeta')
+
+    const elisa = { ...carta, classe: CLASSI.find((c) => c.id === 'accusatore')! }
+    expect(archetypeCardWithArticle(elisa)).toBe('l’Accusatore Poeta')
+  })
+
+  it('ha una sottoclasse senza vincoli, per chi vuole giocare normale', () => {
+    expect(SOTTOCLASSI.some((archetype) => archetype.id === 'classico')).toBe(true)
   })
 
   it('ha abbastanza classi e sottoclassi per un tavolo pieno', () => {
@@ -358,6 +397,51 @@ describe('archetipi', () => {
         expect(carta.targetName).not.toBeNull()
         expect(carta.targetName).not.toBe(player.name)
         expect(state.players.map((p) => p.name)).toContain(carta.targetName)
+      }
+    }
+  })
+
+  it('cambia carta una volta sola, e la carta nuova è davvero diversa', () => {
+    const stato = createGame(PLAYERS, SETTINGS, seeded(3))
+    const primo = PLAYERS[0].id
+    const prima = stato.archetypesByPlayer[primo]
+    expect(prima.rerolled).toBe(false)
+
+    const dopo = rerollArchetypes(stato, primo, seeded(9))
+    const seconda = dopo.archetypesByPlayer[primo]
+    expect(seconda.rerolled).toBe(true)
+    expect(seconda.classe.id).not.toBe(prima.classe.id)
+    expect(seconda.sottoclasse.id).not.toBe(prima.sottoclasse.id)
+
+    // Il secondo tentativo non deve cambiare più niente.
+    const terzo = rerollArchetypes(dopo, primo, seeded(11))
+    expect(terzo).toBe(dopo)
+  })
+
+  it('cambiando carta non copia quella di un altro giocatore', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const stato = createGame(PLAYERS, SETTINGS, seeded(seed))
+      const chi = PLAYERS[seed % PLAYERS.length].id
+      const dopo = rerollArchetypes(stato, chi, seeded(seed * 7))
+      const mia = dopo.archetypesByPlayer[chi]
+      for (const altro of PLAYERS.filter((p) => p.id !== chi)) {
+        const sua = dopo.archetypesByPlayer[altro.id]
+        expect(sua.classe.id).not.toBe(mia.classe.id)
+        expect(sua.sottoclasse.id).not.toBe(mia.sottoclasse.id)
+      }
+    }
+  })
+
+  it('cambiando carta ripesca anche il bersaglio, e mai te stesso', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const stato = createGame(PLAYERS, SETTINGS, seeded(seed))
+      const chi = PLAYERS[0]
+      const carta = rerollArchetypes(stato, chi.id, seeded(seed * 13)).archetypesByPlayer[chi.id]
+      if (carta.classe.needsTarget) {
+        expect(carta.targetName).not.toBeNull()
+        expect(carta.targetName).not.toBe(chi.name)
+      } else {
+        expect(carta.targetName).toBeNull()
       }
     }
   })

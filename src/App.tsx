@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   advanceReveal,
+  rerollArchetypes,
   applyVote,
   continueFromVoteResult,
   createGame,
@@ -112,6 +113,7 @@ export function App() {
             tieniPremuto={uiPrefs.tieniPremuto}
             secondiCarta={revealSeconds(game.settings)}
             onNext={() => setGame(advanceReveal(game))}
+            onReroll={() => setGame(rerollArchetypes(game, game.players[game.revealIndex].id))}
           />
         )}
         {game.phase === 'round' && (

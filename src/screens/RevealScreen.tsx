@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { archetypeCardWithArticle } from '../game/archetypes'
 import { roleFor } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
@@ -16,9 +17,11 @@ interface Props {
   /** Secondi uguali per tutti con la carta in mano. 0 = nessun tempo fisso. */
   secondiCarta: number
   onNext: () => void
+  /** Ripesca classe e sottoclasse di chi ha la carta in mano. Una volta sola. */
+  onReroll: () => void
 }
 
-export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Props) {
+export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onReroll }: Props) {
   const [consegnato, setConsegnato] = useState(false)
   const aTempo = secondiCarta > 0
   const durataMs = secondiCarta * 1000
@@ -58,6 +61,18 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Prop
         onPronto={() => setConsegnato(true)}
       />
     )
+  }
+
+  // Il cambio si può chiedere solo dopo aver visto cosa c'era: serve a rifiutare
+  // una carta, non a scartarla al buio. Dopo, la carta si richiude e il tempo
+  // riparte da capo, perché quella nuova è tutta da leggere.
+  const puoRicambiare = giaVisto && role.archetypes !== null && !role.archetypes.rerolled
+
+  const cambiaCarta = () => {
+    vibra('conferma')
+    chiudi()
+    setPartito(false)
+    onReroll()
   }
 
   const chiudiEProsegui = () => {
@@ -128,6 +143,12 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Prop
           {role.archetypes && (
             <div className="archetipi">
               {/*
+                Il nome unico sta sopra le due regole perché è quello che resta
+                dopo la partita: nessuno racconta "avevo la classe Testimone",
+                si dice "mi è capitato il Testimone Poeta".
+              */}
+              <p className="archetipi-titolo">Sei {archetypeCardWithArticle(role.archetypes)}</p>
+              {/*
                 Classe e sottoclasse non sono due voci di un elenco: servono in
                 momenti diversi della partita, la sottoclasse quando dici la tua
                 parola e la classe mentre si discute e si vota. Per questo hanno
@@ -165,6 +186,11 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Prop
       </ScreenBody>
 
       <ScreenActions>
+        {puoRicambiare && (
+          <button type="button" className="btn btn-secondary" onClick={cambiaCarta}>
+            Cambia carta, una volta sola
+          </button>
+        )}
         {puoProseguire ? (
           <button type="button" className="btn" onClick={chiudiEProsegui}>
             {ultimo ? 'Ho capito, si comincia' : 'Ho capito, passa al prossimo'}

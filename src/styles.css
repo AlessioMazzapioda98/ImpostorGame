@@ -1085,6 +1085,16 @@ input[type='text']:focus {
   gap: 10px;
 }
 
+/* Il nome unico: è come si chiama la carta quando se ne parla dopo la partita,
+   quindi sta sopra le due regole e si legge prima di loro. */
+.archetipi-titolo {
+  margin: 0;
+  text-align: left;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
 .arch-blocco {
   text-align: left;
   padding: 12px 14px;
