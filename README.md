@@ -110,7 +110,9 @@ capire.
 perché è così che se ne parla dopo la partita: «mi è capitato il Testimone Poeta».
 Quindi ogni `name` è una parola sola, maschile e singolare, senza articolo;
 l'articolo sta in `article` sulla classe. `archetypeCardName` compone "Testimone
-Poeta" e `archetypeCardWithArticle` compone "il Testimone Poeta".
+Poeta" e `archetypeCardWithArticle` compone "il Testimone Poeta". Sulla carta il nome
+intero è la prima cosa che si legge dopo la parola o l'indizio, in grande; i due
+riquadri sotto sono la spiegazione del nome, non un elenco di due voci separate.
 
 Le classi con `needsTarget` nominano un altro giocatore, che il gioco sorteggia a inizio
 partita e scrive sulla carta. Nel testo della regola sta il segnaposto `{bersaglio}`, e

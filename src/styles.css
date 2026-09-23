@@ -578,6 +578,7 @@ input[type='text']:focus {
 .archetipo-nome {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-weight: 750;
   font-size: 17px;
@@ -1086,13 +1087,33 @@ input[type='text']:focus {
 }
 
 /* Il nome unico: è come si chiama la carta quando se ne parla dopo la partita,
-   quindi sta sopra le due regole e si legge prima di loro. */
-.archetipi-titolo {
+   quindi apre il blocco in grande e le due regole sotto lo spiegano. */
+.archetipi-occhiello {
   margin: 0;
   text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
   font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: -0.01em;
+  color: var(--text-dim);
+}
+
+.archetipi-titolo {
+  margin: 0 0 2px;
+  text-align: left;
+  font-weight: 800;
+  font-size: 23px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* Le due faccine attaccate al nome: si riconoscono prima delle parole e
+   tornano identiche sui due blocchi qui sotto. */
+.archetipi-titolo-emoji {
+  margin-right: 8px;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .arch-blocco {
@@ -1116,9 +1137,12 @@ input[type='text']:focus {
   border-style: dashed;
 }
 
-.arch-etichetta {
+/* Accanto al nome, in piccolo: dice in che momento della partita vale questa
+   metà della carta. Sta sulla stessa riga per non rubare spazio ai venti
+   secondi di lettura, e va a capo da sola sugli schermi stretti. */
+.archetipo-ruolo {
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   font-size: 10px;
   font-weight: 700;
   color: var(--text-dim);

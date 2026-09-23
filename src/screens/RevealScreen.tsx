@@ -143,22 +143,30 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
           {role.archetypes && (
             <div className="archetipi">
               {/*
-                Il nome unico sta sopra le due regole perché è quello che resta
-                dopo la partita: nessuno racconta "avevo la classe Testimone",
-                si dice "mi è capitato il Testimone Poeta".
+                Il nome intero è la prima cosa che si legge, in grande: è quello
+                che resta dopo la partita, perché nessuno racconta "avevo la
+                classe Testimone", si dice "mi è capitato il Testimone Goloso".
+                Le due regole vengono dopo, come spiegazione del nome.
               */}
-              <p className="archetipi-titolo">Sei {archetypeCardWithArticle(role.archetypes)}</p>
+              <p className="archetipi-occhiello">Questa partita sei</p>
+              <p className="archetipi-titolo">
+                <span className="archetipi-titolo-emoji" aria-hidden="true">
+                  {role.archetypes.classe.emoji}
+                  {role.archetypes.sottoclasse.emoji}
+                </span>
+                {archetypeCardWithArticle(role.archetypes)}
+              </p>
               {/*
                 Classe e sottoclasse non sono due voci di un elenco: servono in
                 momenti diversi della partita, la sottoclasse quando dici la tua
                 parola e la classe mentre si discute e si vota. Per questo hanno
-                bordo diverso e un'etichetta che dice a cosa servono.
+                bordo diverso e una didascalia che dice quando valgono.
               */}
               <div className="arch-blocco arch-classe">
-                <p className="arch-etichetta">Classe · come ti comporti al tavolo</p>
                 <p className="archetipo-nome">
                   <span className="archetipo-emoji">{role.archetypes.classe.emoji}</span>
                   {role.archetypes.classe.name}
+                  <span className="archetipo-ruolo">come ti comporti al tavolo</span>
                 </p>
                 <p className="archetipo-regola">
                   <RegolaArchetipo
@@ -168,10 +176,10 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
                 </p>
               </div>
               <div className="arch-blocco arch-sottoclasse">
-                <p className="arch-etichetta">Sottoclasse · come dici la tua parola</p>
                 <p className="archetipo-nome">
                   <span className="archetipo-emoji">{role.archetypes.sottoclasse.emoji}</span>
                   {role.archetypes.sottoclasse.name}
+                  <span className="archetipo-ruolo">come dici la tua parola</span>
                 </p>
                 <p className="archetipo-regola">
                   <RegolaArchetipo
