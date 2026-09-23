@@ -1180,3 +1180,26 @@ input[type='text']:focus {
 .cartellino-rosso {
   background: var(--danger);
 }
+
+/*
+ * Il secondo cartellino porta fuori un giocatore, quindi non parte da solo:
+ * l'avviso spiega cosa sta per succedere e i due pulsanti sono invertiti di
+ * proposito, con il rosso in basso e sottovoce, perché è quello che non si
+ * torna indietro.
+ */
+.avviso-rosso {
+  margin: 0;
+  color: var(--danger);
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.turno-attuale:has(.avviso-rosso) {
+  border-color: var(--danger);
+}
+
+.btn-ghost.btn-rosso {
+  color: var(--danger);
+}

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { alivePlayers, answerSeconds, giveYellowCard, playerById, yellowCardsOf } from '../game/engine'
+import {
+  alivePlayers,
+  answerSeconds,
+  giveYellowCard,
+  isOnLastWarning,
+  playerById,
+  yellowCardsOf,
+} from '../game/engine'
 import type { GameState, PlayerId } from '../game/types'
 import { Avatar } from '../ui/Avatar'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
@@ -19,11 +26,23 @@ interface Props {
  * È anche l'unico posto dove nascono i cartellini: allo scadere del tempo per
  * dire la parola ne parte uno da solo, e da lì in poi quel giocatore parla con
  * calma, perché il cartellino l'ha già preso.
+ *
+ * Il cartellino parte da solo, ma al tavolo può capitare che uno dica la parola
+ * in tempo e nessuno si ricordi di premere: per questo si può sempre togliere
+ * subito dopo. Il secondo cartellino invece porta fuori un giocatore e può
+ * chiudere il giro, e dopo non ci sarebbe più uno schermo su cui rimediare,
+ * quindi quello si chiede prima di darlo.
  */
 export function RoundScreen({ state, onState, onVote }: Props) {
   const [detti, setDetti] = useState(0)
   /** Chi ha già sforato in questo giro: non deve riprendere un cartellino. */
   const [sforati, setSforati] = useState<PlayerId[]>([])
+  /** Chi ha sforato ma a cui il cartellino è stato tolto: niente conto, niente cartellino. */
+  const [perdonati, setPerdonati] = useState<PlayerId[]>([])
+  /** L'ultimo cartellino dato, con lo stato di prima da rimettere se era un errore. */
+  const [annullabile, setAnnullabile] = useState<{ id: PlayerId; prima: GameState } | null>(null)
+  /** Il cartellino rosso in attesa di un sì, perché eliminare non si annulla. */
+  const [daConfermare, setDaConfermare] = useState<PlayerId | null>(null)
   const [scadenza, setScadenza] = useState<{ id: PlayerId; quando: number } | null>(null)
   const [ora, setOra] = useState(() => Date.now())
 
@@ -41,6 +60,9 @@ export function RoundScreen({ state, onState, onVote }: Props) {
   useEffect(() => {
     setDetti(0)
     setSforati([])
+    setPerdonati([])
+    setAnnullabile(null)
+    setDaConfermare(null)
   }, [state.round])
 
   // La scadenza porta con sé di chi è, così il turno dopo non eredita per
@@ -71,23 +93,57 @@ export function RoundScreen({ state, onState, onVote }: Props) {
     setScadenza(null)
     setSforati((prima) => (prima.includes(id) ? prima : [...prima, id]))
     vibra('colpo')
-    const dopo = giveYellowCard(state, id)
-    // Col secondo cartellino il giocatore è fuori: il turno passa al prossimo.
-    if (dopo.eliminatedIds.includes(id)) setDetti((valore) => valore + 1)
-    onState(dopo)
+    if (isOnLastWarning(state, id)) {
+      setDaConfermare(id)
+      return
+    }
+    setAnnullabile({ id, prima: state })
+    onState(giveYellowCard(state, id))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scadenza, rimastiMs])
 
   const secondiRimasti = Math.ceil(rimastiMs / 1000)
   const haSforato = attuale ? sforati.includes(attuale.id) : false
+  const perdonato = attuale ? perdonati.includes(attuale.id) : false
+  const rossoInAttesa = attuale && daConfermare === attuale.id
+  const daTogliere = attuale && annullabile?.id === attuale.id ? annullabile : null
+
+  /** Rimette lo stato di prima del cartellino: il tempo resta finito, il cartellino no. */
+  const togliCartellino = () => {
+    if (!daTogliere) return
+    vibra('tocco')
+    onState(daTogliere.prima)
+    setPerdonati((prima) => (prima.includes(daTogliere.id) ? prima : [...prima, daTogliere.id]))
+    setAnnullabile(null)
+  }
+
+  const confermaRosso = () => {
+    if (!daConfermare) return
+    vibra('conferma')
+    const dopo = giveYellowCard(state, daConfermare)
+    // Il giocatore è fuori: il turno passa al prossimo.
+    if (dopo.eliminatedIds.includes(daConfermare)) setDetti((valore) => valore + 1)
+    setDaConfermare(null)
+    onState(dopo)
+  }
+
+  const risparmiaRosso = () => {
+    if (!daConfermare) return
+    vibra('tocco')
+    const id = daConfermare
+    setDaConfermare(null)
+    setPerdonati((prima) => (prima.includes(id) ? prima : [...prima, id]))
+  }
 
   const avanti = () => {
     vibra('tocco')
+    setAnnullabile(null)
     setDetti((valore) => Math.min(valore + 1, ordine.length))
   }
 
   const indietro = () => {
     vibra('tocco')
+    setAnnullabile(null)
     setDetti((valore) => Math.max(valore - 1, 0))
   }
 
@@ -108,11 +164,18 @@ export function RoundScreen({ state, onState, onVote }: Props) {
               <p className={secondiRimasti <= 5 ? 'conto-grosso conto-scarso' : 'conto-grosso'}>
                 {secondiRimasti}
               </p>
+            ) : rossoInAttesa ? (
+              <p className="avviso-rosso">
+                Tempo finito, e per {attuale.name} sarebbe il secondo cartellino: quello rosso,
+                che lo porta fuori. Dategli il rosso solo se la parola davvero non è arrivata.
+              </p>
             ) : (
               <p className="muted">
-                {haSforato
-                  ? 'Cartellino preso: adesso puoi dirla con calma.'
-                  : 'Una parola sola, collegata alla parola segreta e nello stile del tuo archetipo.'}
+                {perdonato
+                  ? 'Tempo finito, ma niente cartellino.'
+                  : haSforato
+                    ? 'Cartellino preso: adesso puoi dirla con calma.'
+                    : 'Una parola sola, collegata alla parola segreta e nello stile del tuo archetipo.'}
               </p>
             )}
             {prossimo && <p className="turno-prossimo">Poi tocca a {prossimo.name}</p>}
@@ -165,12 +228,28 @@ export function RoundScreen({ state, onState, onVote }: Props) {
           <button type="button" className="btn" onClick={vota}>
             Si vota
           </button>
+        ) : rossoInAttesa ? (
+          <>
+            <button type="button" className="btn" onClick={risparmiaRosso}>
+              Ha parlato in tempo, niente cartellino
+            </button>
+            <div className="azioni-minori">
+              <button type="button" className="btn-ghost btn-rosso" onClick={confermaRosso}>
+                Cartellino rosso, {attuale?.name} è fuori
+              </button>
+            </div>
+          </>
         ) : (
           <>
             <button type="button" className="btn" onClick={avanti}>
               {attuale?.name} ha detto la sua
             </button>
             <div className="azioni-minori">
+              {daTogliere && (
+                <button type="button" className="btn-ghost" onClick={togliCartellino}>
+                  Togli il cartellino
+                </button>
+              )}
               {detti > 0 && (
                 <button type="button" className="btn-ghost" onClick={indietro}>
                   Torna indietro
