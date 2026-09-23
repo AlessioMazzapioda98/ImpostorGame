@@ -174,8 +174,8 @@ export const ARCHETYPES: Archetype[] = [
     kind: 'sottoclasse',
   },
   {
-    id: 'dinamico',
-    name: 'Dinamico',
+    id: 'verbale',
+    name: 'Verbale',
     rule: 'Deve essere un verbo all’infinito.',
     emoji: '🏃',
     kind: 'sottoclasse',
