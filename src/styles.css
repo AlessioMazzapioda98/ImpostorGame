@@ -15,6 +15,9 @@
   --accent: #8f7dff;
   --accent-strong: #6c53ff;
   --danger: #ff6b81;
+  /* Il giallo del cartellino: usato solo per i cartellini e per il conto
+     alla rovescia agli sgoccioli, così vuol dire sempre la stessa cosa. */
+  --giallo: #fbbf24;
   --success: #4ade80;
   --radius: 16px;
   --radius-lg: 24px;
@@ -1068,4 +1071,135 @@ input[type='text']:focus {
 .conto {
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+/* --- classe e sottoclasse sulla carta --------------------------------------
+   Due blocchi distinti, non un elenco: si usano in momenti diversi della
+   partita, quindi non devono sembrare la stessa cosa. */
+
+.archetipi {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arch-blocco {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-forte);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* La classe vincola discussione e voto, e resta valida per tutta la partita. */
+.arch-classe {
+  border-color: var(--accent);
+}
+
+/* La sottoclasse vale solo nell'istante in cui dici la tua parola. */
+.arch-sottoclasse {
+  border-style: dashed;
+}
+
+.arch-etichetta {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* Il nome del bersaglio: l'unica cosa della carta che cambia a ogni partita,
+   quindi porta il colore di quella persona e si ritrova senza rileggere. */
+.bersaglio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  margin: 0 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border: 1px solid var(--accent);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bersaglio .avatar-sm {
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+}
+
+/* Il bersaglio nominato di nuovo nella stessa regola: basta il risalto del
+   colore, la pastiglia piena l'ha già fatto trovare una volta. */
+.bersaglio-ripetuto {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* --- cartellini ------------------------------------------------------------
+   Il conto alla rovescia per parlare sta in mezzo al tavolo, quindi è grande:
+   lo devono vedere tutti, non solo chi ha il telefono davanti. */
+
+.conto-grosso {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  margin: 2px 0;
+}
+
+/* Sotto i cinque secondi il numero cambia colore invece di lampeggiare: il
+   lampeggio, su un tavolo che sta già parlando sopra, si nota meno. */
+.conto-scarso {
+  color: var(--giallo);
+}
+
+.turno-sforato {
+  border-color: var(--giallo);
+}
+
+/* Un rettangolino come il cartellino vero dell'arbitro. */
+.cartellino {
+  width: 11px;
+  height: 15px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.cartellino-giallo {
+  background: var(--giallo);
+}
+
+.cartellino-rosso {
+  background: var(--danger);
+}
+
+/*
+ * Il secondo cartellino porta fuori un giocatore, quindi non parte da solo:
+ * l'avviso spiega cosa sta per succedere e i due pulsanti sono invertiti di
+ * proposito, con il rosso in basso e sottovoce, perché è quello che non si
+ * torna indietro.
+ */
+.avviso-rosso {
+  margin: 0;
+  color: var(--danger);
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.turno-attuale:has(.avviso-rosso) {
+  border-color: var(--danger);
+}
+
+.btn-ghost.btn-rosso {
+  color: var(--danger);
 }

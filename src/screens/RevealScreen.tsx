@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { archetypeRule } from '../game/archetypes'
 import { roleFor } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
+import { RegolaArchetipo } from '../ui/RegolaArchetipo'
 import { Handoff } from '../ui/Handoff'
 import { SecretCard } from '../ui/SecretCard'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
@@ -126,26 +126,40 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext }: Prop
           )}
 
           {role.archetypes && (
-            <>
-              <div className="archetipo">
-                <p className="eyebrow">La tua classe</p>
+            <div className="archetipi">
+              {/*
+                Classe e sottoclasse non sono due voci di un elenco: servono in
+                momenti diversi della partita, la sottoclasse quando dici la tua
+                parola e la classe mentre si discute e si vota. Per questo hanno
+                bordo diverso e un'etichetta che dice a cosa servono.
+              */}
+              <div className="arch-blocco arch-classe">
+                <p className="arch-etichetta">Classe · come ti comporti al tavolo</p>
                 <p className="archetipo-nome">
                   <span className="archetipo-emoji">{role.archetypes.classe.emoji}</span>
                   {role.archetypes.classe.name}
                 </p>
                 <p className="archetipo-regola">
-                  {archetypeRule(role.archetypes.classe, role.archetypes.targetName)}
+                  <RegolaArchetipo
+                    archetype={role.archetypes.classe}
+                    targetName={role.archetypes.targetName}
+                  />
                 </p>
               </div>
-              <div className="archetipo">
-                <p className="eyebrow">La tua sottoclasse</p>
+              <div className="arch-blocco arch-sottoclasse">
+                <p className="arch-etichetta">Sottoclasse · come dici la tua parola</p>
                 <p className="archetipo-nome">
                   <span className="archetipo-emoji">{role.archetypes.sottoclasse.emoji}</span>
                   {role.archetypes.sottoclasse.name}
                 </p>
-                <p className="archetipo-regola">{role.archetypes.sottoclasse.rule}</p>
+                <p className="archetipo-regola">
+                  <RegolaArchetipo
+                    archetype={role.archetypes.sottoclasse}
+                    targetName={role.archetypes.targetName}
+                  />
+                </p>
               </div>
-            </>
+            </div>
           )}
         </SecretCard>
       </ScreenBody>

@@ -115,7 +115,7 @@ export function App() {
           />
         )}
         {game.phase === 'round' && (
-          <RoundScreen state={game} onVote={() => setGame(startVote(game))} />
+          <RoundScreen state={game} onState={setGame} onVote={() => setGame(startVote(game))} />
         )}
         {game.phase === 'vote' && (
           <VoteScreen

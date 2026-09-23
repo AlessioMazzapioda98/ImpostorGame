@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { archetypeRule } from '../game/archetypes'
 import { alivePlayers } from '../game/engine'
 import type { GameState, PlayerId } from '../game/types'
 import { Avatar } from '../ui/Avatar'
+import { RegolaArchetipo } from '../ui/RegolaArchetipo'
 import { Handoff } from '../ui/Handoff'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
 import { vibra } from '../ui/haptics'
@@ -95,7 +95,7 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
               {classe.name}
             </p>
             <p className="promemoria-regola">
-              {archetypeRule(classe, carta?.targetName ?? null)}
+              <RegolaArchetipo archetype={classe} targetName={carta?.targetName ?? null} />
             </p>
           </div>
         )}
