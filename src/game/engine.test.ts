@@ -22,6 +22,9 @@ import {
   rerollArchetypes,
   maxImpostors,
   roleFor,
+  continueFromWheel,
+  drawFromWheel,
+  spinWheel,
   submitGuess,
   suggestedImpostors,
   turnOrderForRound,
@@ -142,19 +145,11 @@ describe('votazione', () => {
     expect(outcome.tie).toBe(false)
   })
 
-  it('non elimina nessuno in caso di pareggio', () => {
+  it('il voto da solo non elimina nessuno in caso di pareggio', () => {
     const outcome = countVotes({ p0: 'p1', p1: 'p0' })
     expect(outcome.tie).toBe(true)
     expect(outcome.eliminatedId).toBeNull()
-  })
-
-  it('in caso di pareggio si passa al giro successivo senza eliminazioni', () => {
-    const state = newGame()
-    const voted = applyVote(state, { p0: 'p1', p1: 'p0' })
-    expect(voted.eliminatedIds).toHaveLength(0)
-    const next = continueFromVoteResult(voted)
-    expect(next.phase).toBe('round')
-    expect(next.round).toBe(2)
+    expect(outcome.tiedIds.sort()).toEqual(['p0', 'p1'])
   })
 
   it('non fa tentare il primo impostore scoperto se ne restano altri in gioco', () => {
@@ -455,6 +450,70 @@ describe('archetipi', () => {
       }
     }
     expect(usciti.size).toBe(ARCHETYPES.length)
+  })
+})
+
+describe('ruota della fortuna', () => {
+  it('dopo un pareggio si va alla ruota invece che al giro successivo', () => {
+    const state = newGame()
+    const voted = applyVote(state, { p0: 'p1', p1: 'p0' })
+    expect(voted.eliminatedIds).toHaveLength(0)
+    const next = continueFromVoteResult(voted)
+    expect(next.phase).toBe('wheel')
+    expect(next.lastVote?.tiedIds.sort()).toEqual(['p0', 'p1'])
+  })
+
+  it("l'estrazione e l'esito sono due passi separati, così la schermata sa dove fermarsi", () => {
+    const state = newGame()
+    const alRuota = continueFromVoteResult(applyVote(state, { p0: 'p1', p1: 'p0' }))
+    const estratto = drawFromWheel(alRuota, seeded(3))
+    expect(estratto.phase).toBe('wheel')
+    expect(estratto.eliminatedIds).toHaveLength(0)
+    const dopo = continueFromWheel(estratto)
+    expect(dopo.eliminatedIds).toEqual([estratto.wheelPickedId])
+  })
+
+  it('estrae uno fra i pari merito e lo manda fuori', () => {
+    const state = newGame()
+    const alRuota = continueFromVoteResult(applyVote(state, { p0: 'p1', p1: 'p0' }))
+    const dopo = spinWheel(alRuota, seeded(3))
+    expect(['p0', 'p1']).toContain(dopo.wheelPickedId!)
+    expect(dopo.eliminatedIds).toEqual([dopo.wheelPickedId])
+    expect(alivePlayers(dopo)).toHaveLength(PLAYERS.length - 1)
+  })
+
+  it('non estrae mai qualcuno che non era a pari merito', () => {
+    const state = newGame()
+    // Tre giocatori con un voto a testa: pari merito in tre.
+    const alRuota = continueFromVoteResult(applyVote(state, { p0: 'p3', p1: 'p4', p2: 'p5' }))
+    const pari = alRuota.lastVote!.tiedIds
+    expect(pari.sort()).toEqual(['p3', 'p4', 'p5'])
+    for (let s = 0; s < 40; s++) {
+      expect(pari).toContain(spinWheel(alRuota, seeded(s)).wheelPickedId!)
+    }
+  })
+
+  it("manda al tentativo se la ruota pesca l'ultimo impostore", () => {
+    const state = createGame(PLAYERS, { ...SETTINGS, impostorCount: 1 }, seeded(7))
+    const impostorId = state.impostorIds[0]
+    const crewId = PLAYERS.map((p) => p.id).find((id) => id !== impostorId)!
+    const alRuota = continueFromVoteResult(
+      applyVote(state, { p0: impostorId, p1: crewId } as Record<string, string>),
+    )
+    expect(alRuota.phase).toBe('wheel')
+    // Con due pari merito, uno dei due semi pesca l'impostore.
+    const esiti = Array.from({ length: 20 }, (_, i) => spinWheel(alRuota, seeded(i)))
+    const pescatoImpostore = esiti.find((e) => e.wheelPickedId === impostorId)
+    expect(pescatoImpostore?.phase).toBe('guess')
+    expect(pescatoImpostore?.guessingImpostorId).toBe(impostorId)
+  })
+
+  it('se non ha votato nessuno non c\'è niente da estrarre e si va avanti', () => {
+    const state = newGame()
+    const vuoto = applyVote(state, {})
+    const next = continueFromVoteResult(vuoto)
+    expect(next.phase).toBe('round')
+    expect(next.round).toBe(2)
   })
 })
 

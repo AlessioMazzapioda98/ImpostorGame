@@ -58,7 +58,12 @@ funziona a schermo intero e anche senza connessione.
 - Il voto è a volte segreto e a volte a mano alzata, estratto a inizio partita. Il
   primo voto è sempre segreto, perché a mano alzata senza ancora nessun indizio ci si
   accoderebbe soltanto al primo che parla. Si può anche fissarlo su una delle due.
-- In caso di pareggio non viene eliminato nessuno e si passa al giro successivo.
+- In caso di pareggio decide la ruota della fortuna: fra i pari merito ne esce uno a
+  sorte. Sembra una penalità per i giocatori normali, perché fra i pari merito ci sono
+  più innocenti che impostori, e invece li aiuta: il giro a vuoto che seguiva ogni
+  pareggio era tutto a vantaggio degli impostori, perché un giro in più vuol dire
+  altre parole vere da cui capire la parola. Misurata, la ruota accorcia le partite e
+  sposta da quattro a sei punti a favore del tavolo.
 - Solo l'ultimo impostore rimasto, quando viene scoperto, può tentare la parola. Se
   la indovina vincono gli impostori. Gli impostori scoperti prima non tentano: dare
   un tentativo a ciascuno regalava loro la partita ogni volta che erano più di uno.

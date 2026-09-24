@@ -87,6 +87,7 @@ export type Phase =
   | 'round'
   | 'vote'
   | 'voteResult'
+  | 'wheel'
   | 'guess'
   | 'gameOver'
 
@@ -97,6 +98,8 @@ export interface VoteOutcome {
   eliminatedId: PlayerId | null
   tie: boolean
   tally: Record<PlayerId, number>
+  /** Chi era a pari merito, quando c'è stato un pareggio: sono loro che vanno alla ruota. */
+  tiedIds: PlayerId[]
 }
 
 export interface GameState {
@@ -120,6 +123,8 @@ export interface GameState {
   lastVote: VoteOutcome | null
   /** L'impostore appena eliminato che può tentare di indovinare. */
   guessingImpostorId: PlayerId | null
+  /** Chi la ruota ha estratto fra i pari merito, finché la schermata lo mostra. */
+  wheelPickedId: PlayerId | null
   /** Come si vota, giro per giro: estratto a inizio partita quando è "misto". */
   voteModeByRound: VoteMode[]
   /** Quanti cartellini gialli ha preso ciascun giocatore, da inizio partita. */

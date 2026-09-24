@@ -81,3 +81,27 @@ describe('cose che il tavolo si aspetta al contrario', () => {
     expect(misura(6, 1).vittorieNormali).toBeGreaterThan(misura(12, 1).vittorieNormali)
   })
 })
+
+describe('la ruota della fortuna dopo un pareggio', () => {
+  /**
+   * Sembra che sorteggiare a caso debba penalizzare i giocatori normali, perché fra
+   * i pari merito ci sono più innocenti che impostori. Invece li aiuta, perché il
+   * giro a vuoto che seguiva ogni pareggio era tutto a vantaggio degli impostori:
+   * un giro in più vuol dire altre parole vere da cui capire la parola.
+   */
+  it('accorcia la partita', () => {
+    for (const [n, k] of [[6, 1], [8, 2], [12, 2]] as const) {
+      const senza = misura(n, k, TAVOLO_MEDIO, 20000, { ruota: false })
+      const con = misura(n, k, TAVOLO_MEDIO, 20000, { ruota: true })
+      expect(con.votazioniMedie, `${n} giocatori`).toBeLessThan(senza.votazioniMedie)
+    }
+  })
+
+  it('non penalizza i giocatori normali, tranne in quattro dove ogni errore pesa', () => {
+    for (const [n, k] of [[6, 1], [8, 1], [8, 2], [12, 2]] as const) {
+      const senza = misura(n, k, TAVOLO_MEDIO, 20000, { ruota: false })
+      const con = misura(n, k, TAVOLO_MEDIO, 20000, { ruota: true })
+      expect(con.vittorieNormali, `${n} giocatori`).toBeGreaterThan(senza.vittorieNormali)
+    }
+  })
+})

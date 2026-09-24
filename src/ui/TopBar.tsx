@@ -6,6 +6,7 @@ const ETICHETTE: Record<GameState['phase'], string> = {
   round: 'Giro di parole',
   vote: 'Votazione',
   voteResult: 'Risultato del voto',
+  wheel: 'Ruota della fortuna',
   guess: 'Tentativo finale',
   gameOver: 'Fine partita',
 }

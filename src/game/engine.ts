@@ -244,6 +244,7 @@ export function createGame(players: Player[], settings: Settings, rng: Rng = Mat
     turnOrder: baseOrder,
     lastVote: null,
     guessingImpostorId: null,
+    wheelPickedId: null,
     voteModeByRound: rollVoteModes(settings.voteMode, rng),
     yellowCards: {},
     winner: null,
@@ -343,7 +344,12 @@ export function countVotes(votes: Record<PlayerId, PlayerId>): VoteOutcome {
   const top = Math.max(0, ...Object.values(tally))
   const leaders = Object.keys(tally).filter((id) => tally[id] === top)
   const tie = top === 0 || leaders.length !== 1
-  return { eliminatedId: tie ? null : leaders[0], tie, tally }
+  return {
+    eliminatedId: tie ? null : leaders[0],
+    tie,
+    tally,
+    tiedIds: tie ? leaders : [],
+  }
 }
 
 /** Applica il risultato della votazione e porta la partita allo stato successivo. */
@@ -368,20 +374,71 @@ function resolveElimination(state: GameState, eliminatedId: PlayerId): GameState
   return settleAfterElimination(state)
 }
 
-/** Dalla schermata del risultato: o l'impostore prova a indovinare, o si va avanti. */
+/** Il giro successivo, quando la votazione non ha portato nessuno fuori. */
+function nextRound(state: GameState): GameState {
+  const round = state.round + 1
+  return {
+    ...state,
+    phase: 'round',
+    round,
+    turnOrder: turnOrderForRound(state, round),
+    lastVote: null,
+    wheelPickedId: null,
+  }
+}
+
+/**
+ * Dalla schermata del risultato. Se qualcuno è stato votato si va avanti con lui;
+ * se c'è stato un pareggio decide la ruota fra i pari merito. Un pareggio senza
+ * nessun pari merito esiste solo se non ha votato nessuno, e lì non c'è niente da
+ * estrarre.
+ */
 export function continueFromVoteResult(state: GameState): GameState {
   const outcome = state.lastVote
-  if (!outcome || outcome.eliminatedId === null) {
-    const round = state.round + 1
-    return {
-      ...state,
-      phase: 'round',
-      round,
-      turnOrder: turnOrderForRound(state, round),
-      lastVote: null,
-    }
+  if (!outcome) return nextRound(state)
+  if (outcome.eliminatedId !== null) return resolveElimination(state, outcome.eliminatedId)
+  if (outcome.tiedIds.length >= 2) return { ...state, phase: 'wheel', wheelPickedId: null }
+  return nextRound(state)
+}
+
+/**
+ * La ruota della fortuna: fra i pari merito ne esce uno a caso, e da lì la partita
+ * prosegue come dopo una qualsiasi eliminazione.
+ *
+ * Toglie di mezzo il giro a vuoto che seguiva ogni pareggio, e quel giro a vuoto
+ * era tutto a vantaggio degli impostori, perché un giro in più vuol dire altre
+ * parole vere da cui capire la parola. In cambio il sorteggio pesca fra i pari
+ * merito, che sono più spesso innocenti che impostori, semplicemente perché gli
+ * innocenti sono di più.
+ */
+export function drawFromWheel(state: GameState, rng: Rng = Math.random): GameState {
+  const candidati = state.lastVote?.tiedIds ?? []
+  if (candidati.length === 0) return state
+  return {
+    ...state,
+    wheelPickedId: candidati[Math.floor(rng() * candidati.length)],
   }
-  return resolveElimination(state, outcome.eliminatedId)
+}
+
+/**
+ * Applica l'estrazione. È separata dal sorteggio perché la schermata deve poter
+ * far girare la ruota sapendo già dove si fermerà: chi esce lo decide il motore,
+ * l'animazione lo racconta e basta.
+ */
+export function continueFromWheel(state: GameState): GameState {
+  const scelto = state.wheelPickedId
+  if (!scelto) return nextRound(state)
+  return resolveElimination(
+    { ...state, eliminatedIds: [...state.eliminatedIds, scelto] },
+    scelto,
+  )
+}
+
+/** Sorteggio ed esito in un colpo solo, comodo fuori dalla schermata. */
+export function spinWheel(state: GameState, rng: Rng = Math.random): GameState {
+  const estratto = drawFromWheel(state, rng)
+  if (!estratto.wheelPickedId) return nextRound(state)
+  return continueFromWheel(estratto)
 }
 
 /** Quanti cartellini ha preso un giocatore. */

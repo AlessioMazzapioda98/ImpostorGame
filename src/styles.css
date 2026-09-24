@@ -1237,3 +1237,35 @@ input[type='text']:focus {
 .btn-ghost.btn-rosso {
   color: var(--danger);
 }
+
+/* La ruota della fortuna: i pari merito si accendono a turno finché non si ferma. */
+.ruota-riga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--raggio-s, 12px);
+  border: 1px solid transparent;
+  opacity: 0.45;
+  transition: opacity 120ms ease, transform 120ms ease, background-color 120ms ease;
+}
+
+.ruota-riga-accesa {
+  opacity: 1;
+  background: var(--sfondo-alto, rgba(255, 255, 255, 0.07));
+  transform: scale(1.03);
+}
+
+.ruota-riga-scelta {
+  border-color: var(--accento, #f5b93a);
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ruota-riga,
+  .ruota-riga-accesa,
+  .ruota-riga-scelta {
+    transition: none;
+    transform: none;
+  }
+}
