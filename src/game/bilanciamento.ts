@@ -21,6 +21,13 @@ import { maxImpostors, suggestedImpostors } from './engine'
  * I valori del modello sono stime, non misure sul campo: presi da soli dicono poco,
  * ma il confronto fra una configurazione e l'altra regge.
  */
+export interface OpzioniPartita {
+  /** Con la ruota, un pareggio manda fuori uno dei pari merito invece di nessuno. */
+  ruota: boolean
+}
+
+export const CON_RUOTA: OpzioniPartita = { ruota: true }
+
 export interface ModelloTavolo {
   /** Quanto fiuto ha un giocatore normale alla prima votazione, quando sa poco. */
   fiutoIniziale: number
@@ -67,6 +74,7 @@ function votazione(
   impostori: number,
   fiuto: number,
   rng: () => number,
+  ruota = true,
 ): number | null {
   const vivi = normali + impostori
   const voti = new Array<number>(vivi).fill(0)
@@ -87,7 +95,9 @@ function votazione(
 
   const massimo = Math.max(...voti)
   const primi = voti.map((v, i) => [v, i] as const).filter(([v]) => v === massimo)
-  return primi.length === 1 ? primi[0][1] : null
+  if (primi.length === 1) return primi[0][1]
+  // Pareggio: la ruota della fortuna ne estrae uno fra i pari merito.
+  return ruota ? primi[Math.floor(rng() * primi.length)][1] : null
 }
 
 /** Gioca una partita sola e dice com'è finita. */
@@ -96,6 +106,7 @@ export function giocaPartita(
   impostori: number,
   m: ModelloTavolo,
   rng: () => number,
+  o: OpzioniPartita = CON_RUOTA,
 ): Partita {
   let normali = giocatori - impostori
   let vivi = impostori
@@ -106,7 +117,7 @@ export function giocaPartita(
   while (giro <= 40) {
     paroleVere += normali
     const fiuto = Math.min(0.85, m.fiutoIniziale + m.fiutoPerGiro * (giro - 1))
-    const fuori = votazione(normali, vivi, fiuto, rng)
+    const fuori = votazione(normali, vivi, fiuto, rng, o.ruota)
 
     if (fuori !== null) {
       if (fuori >= normali) {
@@ -143,6 +154,7 @@ export function misura(
   impostori: number,
   m: ModelloTavolo = TAVOLO_MEDIO,
   partite = 20000,
+  o: OpzioniPartita = CON_RUOTA,
 ): Misura {
   const rng = seme(giocatori * 7919 + impostori * 104729 + 11)
   const conteggio: Record<Esito, number> = {
@@ -154,7 +166,7 @@ export function misura(
   let vittorie = 0
   let votazioni = 0
   for (let i = 0; i < partite; i++) {
-    const p = giocaPartita(giocatori, impostori, m, rng)
+    const p = giocaPartita(giocatori, impostori, m, rng, o)
     if (p.vinconoINormali) vittorie++
     votazioni += p.votazioni
     conteggio[p.esito]++

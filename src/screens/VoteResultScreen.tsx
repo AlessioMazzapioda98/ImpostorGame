@@ -45,7 +45,11 @@ export function VoteResultScreen({ state, onContinue }: Props) {
             <>
               <p className="outcome">🤷</p>
               <h1>Pareggio</h1>
-              <p className="muted">Nessuno viene eliminato. Si riparte con un altro giro.</p>
+              <p className="muted">
+                {outcome.tiedIds.length >= 2
+                  ? 'Il gruppo non ha deciso, quindi decide la sorte: parte la ruota.'
+                  : 'Non ha votato nessuno. Si riparte con un altro giro.'}
+              </p>
             </>
           ) : (
             <>
@@ -92,7 +96,13 @@ export function VoteResultScreen({ state, onContinue }: Props) {
           </button>
         ) : (
           <button type="button" className="btn" onClick={prosegui}>
-            {eraImpostore ? 'Tenta di indovinare' : 'Avanti'}
+            {outcome.tie
+              ? outcome.tiedIds.length >= 2
+                ? 'Gira la ruota'
+                : 'Avanti'
+              : eraImpostore
+                ? 'Tenta di indovinare'
+                : 'Avanti'}
           </button>
         )}
       </ScreenActions>

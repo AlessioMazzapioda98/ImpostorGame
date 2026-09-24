@@ -3,6 +3,8 @@ import {
   advanceReveal,
   applyVote,
   continueFromVoteResult,
+  continueFromWheel,
+  drawFromWheel,
   createGame,
   startVote,
   submitGuess,
@@ -18,6 +20,7 @@ import { RevealScreen } from './screens/RevealScreen'
 import { RoundScreen } from './screens/RoundScreen'
 import { VoteScreen } from './screens/VoteScreen'
 import { VoteResultScreen } from './screens/VoteResultScreen'
+import { WheelScreen } from './screens/WheelScreen'
 import { GuessScreen } from './screens/GuessScreen'
 import { GameOverScreen } from './screens/GameOverScreen'
 import { Conferma } from './ui/Conferma'
@@ -125,7 +128,13 @@ export function App() {
           />
         )}
         {game.phase === 'voteResult' && (
-          <VoteResultScreen state={game} onContinue={() => setGame(continueFromVoteResult(game))} />
+          <VoteResultScreen
+            state={game}
+            onContinue={() => setGame(drawFromWheel(continueFromVoteResult(game)))}
+          />
+        )}
+        {game.phase === 'wheel' && (
+          <WheelScreen state={game} onContinue={() => setGame(continueFromWheel(game))} />
         )}
         {game.phase === 'guess' && (
           <GuessScreen state={game} onGuess={(guess) => setGame(submitGuess(game, guess))} />
