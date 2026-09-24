@@ -201,7 +201,7 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
         )}
         {puoProseguire ? (
           <button type="button" className="btn" onClick={chiudiEProsegui}>
-            {ultimo ? 'Ho capito, si comincia' : 'Ho capito, passa al prossimo'}
+            {ultimo ? 'Passa al turno delle parole' : 'Ho capito, passa al prossimo'}
           </button>
         ) : giaVisto ? (
           <p className="suggerimento">

@@ -30,12 +30,11 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
 
   const segreto = modalita === 'segreto'
   const voter = voters[voterIndex]
-  // Qui si ricorda solo la classe, che è quella che vincola come ti comporti e
-  // chi puoi votare: la sottoclasse riguarda la parola e al voto non serve più.
-  // Solo nel voto segreto, perché in quello palese la regola la leggerebbe
-  // tutto il tavolo.
-  const carta = state.archetypesByPlayer[voter.id]
-  const classe = segreto ? carta?.classe : undefined
+  // Il promemoria ripete tutta la carta, classe e sottoclasse: la classe vincola
+  // chi puoi votare, e la discussione non è finita, quindi la sottoclasse serve
+  // ancora. Solo nel voto segreto, perché in quello palese la leggerebbe tutto
+  // il tavolo.
+  const carta = segreto ? state.archetypesByPlayer[voter.id] : undefined
   const passo = `Voto ${voterIndex + 1} di ${voters.length}`
 
   const conferma = () => {
@@ -87,16 +86,24 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
           </div>
         </div>
 
-        {classe && (
+        {carta && (
           <div className="promemoria">
-            <p className="eyebrow">Ricorda la tua classe</p>
-            <p className="promemoria-nome">
-              <span className="archetipo-emoji">{classe.emoji}</span>
-              {classe.name}
-            </p>
-            <p className="promemoria-regola">
-              <RegolaArchetipo archetype={classe} targetName={carta?.targetName ?? null} />
-            </p>
+            <p className="eyebrow">Ricorda la tua carta</p>
+            {[
+              { archetipo: carta.classe, quando: 'al voto e in discussione' },
+              { archetipo: carta.sottoclasse, quando: 'quando dici la parola' },
+            ].map(({ archetipo, quando }) => (
+              <div key={quando} className="promemoria-voce">
+                <p className="promemoria-nome">
+                  <span className="archetipo-emoji">{archetipo.emoji}</span>
+                  {archetipo.name}
+                  <span className="archetipo-ruolo">{quando}</span>
+                </p>
+                <p className="promemoria-regola">
+                  <RegolaArchetipo archetype={archetipo} targetName={carta.targetName ?? null} />
+                </p>
+              </div>
+            ))}
           </div>
         )}
 
