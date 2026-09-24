@@ -44,7 +44,8 @@ export interface Archetype {
 /** Quello che un giocatore si ritrova sulla carta: una classe e una sottoclasse. */
 export interface ArchetypeCard {
   classe: Archetype
-  sottoclasse: Archetype
+  /** Null per il Matto, che è libero da tutto e non ne riceve nessuna. */
+  sottoclasse: Archetype | null
   /** Chi la classe ti dice di accusare, difendere o sorvegliare. */
   targetName: string | null
   /** Vero quando il giocatore ha già speso il suo unico cambio di carta. */

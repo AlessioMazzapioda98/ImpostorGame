@@ -43,7 +43,7 @@ export function GameOverScreen({ state, onPlayAgain, onNewGame }: Props) {
                   {carta && (
                     <span className="recap-archetipo">
                       {carta.classe.emoji}
-                      {carta.sottoclasse.emoji} {archetypeCardName(carta)}
+                      {carta.sottoclasse?.emoji} {archetypeCardName(carta)}
                       {carta.targetName ? ` (${carta.targetName})` : ''}
                       {carta.rerolled ? ' · carta cambiata' : ''}
                     </span>
