@@ -35,6 +35,15 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
   // ancora. Solo nel voto segreto, perché in quello palese la leggerebbe tutto
   // il tavolo.
   const carta = segreto ? state.archetypesByPlayer[voter.id] : undefined
+  // Il Matto gira senza sottoclasse, quindi qui le voci possono essere una sola.
+  const voci = carta
+    ? [
+        { archetipo: carta.classe, quando: 'al voto e in discussione' },
+        ...(carta.sottoclasse
+          ? [{ archetipo: carta.sottoclasse, quando: 'quando dici la parola' }]
+          : []),
+      ]
+    : []
   const passo = `Voto ${voterIndex + 1} di ${voters.length}`
 
   const conferma = () => {
@@ -89,10 +98,7 @@ export function VoteScreen({ state, modalita = 'segreto', onDone }: Props) {
         {carta && (
           <div className="promemoria">
             <p className="eyebrow">Ricorda la tua carta</p>
-            {[
-              { archetipo: carta.classe, quando: 'al voto e in discussione' },
-              { archetipo: carta.sottoclasse, quando: 'quando dici la parola' },
-            ].map(({ archetipo, quando }) => (
+            {voci.map(({ archetipo, quando }) => (
               <div key={quando} className="promemoria-voce">
                 <p className="promemoria-nome">
                   <span className="archetipo-emoji">{archetipo.emoji}</span>
