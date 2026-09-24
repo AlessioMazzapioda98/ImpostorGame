@@ -137,7 +137,11 @@ tempo, perché quella nuova è tutta da leggere.
 ## Aggiungere parole
 
 Le parole stanno in `src/game/words.ts`, raggruppate per categoria: basta la parola,
-perché l'indizio è il nome della categoria. Gli archetipi stanno in
+perché l'indizio è il nome della categoria. Proprio per questo le categorie non si
+devono sovrapporre: una parola va dove il tavolo la cercherebbe per prima e in nessun
+altro posto, altrimenti l'indizio manda fuori strada chi dovrebbe aiutare. Il calzino
+sta fra i vestiti e non fra gli oggetti di casa, la bicicletta fra i mezzi di
+trasporto e non fra gli sport, dove c'è il ciclismo. Gli archetipi stanno in
 `src/game/archetypes.ts`: servono un nome, la regola scritta rivolgendosi al giocatore,
 un'emoji e il `kind`, `classe` o `sottoclasse`. Una classe che nomina qualcuno scrive
 `{bersaglio}` nella regola e dichiara `needsTarget`.
