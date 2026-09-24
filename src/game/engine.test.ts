@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ARCHETYPES,
   CLASSI,
+  ID_MATTO,
   SOTTOCLASSI,
   archetypeCardName,
   archetypeCardWithArticle,
@@ -36,7 +37,7 @@ import {
   voteModeForRound,
   yellowCardsOf,
 } from './engine'
-import type { Player, Settings } from './types'
+import type { ArchetypeCard, GameState, Player, Settings } from './types'
 
 const PLAYERS: Player[] = ['Alessio', 'Bea', 'Carlo', 'Dana', 'Enzo', 'Fabio'].map((name, i) => ({
   id: `p${i}`,
@@ -336,6 +337,11 @@ describe('archetipi', () => {
     expect(archetypeCardName(carta)).toBe('Testimone Poeta')
     expect(archetypeCardWithArticle(carta)).toBe('il Testimone Poeta')
 
+    // Il Matto gira da solo, quindi il suo nome è una parola sola.
+    const matto = { ...carta, classe: CLASSI.find((c) => c.id === ID_MATTO)!, sottoclasse: null }
+    expect(archetypeCardName(matto)).toBe('Matto')
+    expect(archetypeCardWithArticle(matto)).toBe('il Matto')
+
     const elisa = { ...carta, classe: CLASSI.find((c) => c.id === 'accusatore')! }
     expect(archetypeCardWithArticle(elisa)).toBe('l’Accusatore Poeta')
   })
@@ -373,12 +379,79 @@ describe('archetipi', () => {
       const carte = Object.values(state.archetypesByPlayer)
       expect(carte).toHaveLength(MANY.length)
       expect(new Set(carte.map((c) => c.classe.id)).size).toBe(MANY.length)
-      expect(new Set(carte.map((c) => c.sottoclasse.id)).size).toBe(MANY.length)
+      const sottoclassi = carte.flatMap((c) => (c.sottoclasse ? [c.sottoclasse] : []))
+      expect(new Set(sottoclassi.map((s) => s.id)).size).toBe(sottoclassi.length)
       for (const carta of carte) {
         expect(carta.classe.kind).toBe('classe')
-        expect(carta.sottoclasse.kind).toBe('sottoclasse')
+        if (carta.sottoclasse) expect(carta.sottoclasse.kind).toBe('sottoclasse')
       }
     }
+  })
+
+  it('lascia il Matto senza sottoclasse, perché è libero da tutto', () => {
+    let visto = 0
+    for (const state of gamesOverSeeds(MANY, SETTINGS)) {
+      for (const carta of Object.values(state.archetypesByPlayer)) {
+        if (carta.classe.id === ID_MATTO) {
+          expect(carta.sottoclasse).toBeNull()
+          visto += 1
+        } else {
+          expect(carta.sottoclasse).not.toBeNull()
+        }
+      }
+    }
+    // Se il Matto non esce mai, il test sopra non ha provato niente.
+    expect(visto).toBeGreaterThan(0)
+  })
+
+  it('cambiando carta la sottoclasse segue la classe nuova', () => {
+    const classe = (id: string) => CLASSI.find((c) => c.id === id)!
+    const sottoclasse = (id: string) => SOTTOCLASSI.find((c) => c.id === id)!
+    // Una partita qualsiasi, con le carte messe a mano: al cambio conta solo
+    // quale classe esce, e così si può decidere quale far uscire.
+    const conCarte = (mia: ArchetypeCard): GameState => {
+      const stato = createGame(PLAYERS, SETTINGS, seeded(5))
+      const carte: Record<string, ArchetypeCard> = { [PLAYERS[0].id]: mia }
+      const altre = ['gregario', 'codardo', 'silenzioso', 'vendicativo', 'conservatore']
+      PLAYERS.slice(1).forEach((giocatore, i) => {
+        carte[giocatore.id] = {
+          classe: classe(altre[i % altre.length]),
+          sottoclasse: sottoclasse('basico'),
+          targetName: null,
+          rerolled: false,
+        }
+      })
+      return { ...stato, archetypesByPlayer: carte }
+    }
+
+    // rng che pesca sempre il primo candidato: il Matto apre l'elenco delle classi.
+    const versoIlMatto = rerollArchetypes(
+      conCarte({
+        classe: classe('testimone'),
+        sottoclasse: sottoclasse('poeta'),
+        targetName: 'Bea',
+        rerolled: false,
+      }),
+      PLAYERS[0].id,
+      () => 0,
+    ).archetypesByPlayer[PLAYERS[0].id]
+    expect(versoIlMatto.classe.id).toBe(ID_MATTO)
+    expect(versoIlMatto.sottoclasse).toBeNull()
+
+    // E chi il Matto ce l'aveva, uscendone si ritrova una sottoclasse.
+    const viaDalMatto = rerollArchetypes(
+      conCarte({
+        classe: classe(ID_MATTO),
+        sottoclasse: null,
+        targetName: null,
+        rerolled: false,
+      }),
+      PLAYERS[0].id,
+      () => 0.999,
+    ).archetypesByPlayer[PLAYERS[0].id]
+    expect(viaDalMatto.classe.id).not.toBe(ID_MATTO)
+    expect(viaDalMatto.sottoclasse).not.toBeNull()
+    expect(viaDalMatto.sottoclasse!.kind).toBe('sottoclasse')
   })
 
   it('sorteggia un bersaglio solo per le classi che lo chiedono, e mai te stesso', () => {
@@ -406,7 +479,7 @@ describe('archetipi', () => {
     const seconda = dopo.archetypesByPlayer[primo]
     expect(seconda.rerolled).toBe(true)
     expect(seconda.classe.id).not.toBe(prima.classe.id)
-    expect(seconda.sottoclasse.id).not.toBe(prima.sottoclasse.id)
+    expect(seconda.sottoclasse?.id).not.toBe(prima.sottoclasse?.id)
 
     // Il secondo tentativo non deve cambiare più niente.
     const terzo = rerollArchetypes(dopo, primo, seeded(11))
@@ -422,7 +495,9 @@ describe('archetipi', () => {
       for (const altro of PLAYERS.filter((p) => p.id !== chi)) {
         const sua = dopo.archetypesByPlayer[altro.id]
         expect(sua.classe.id).not.toBe(mia.classe.id)
-        expect(sua.sottoclasse.id).not.toBe(mia.sottoclasse.id)
+        if (sua.sottoclasse && mia.sottoclasse) {
+          expect(sua.sottoclasse.id).not.toBe(mia.sottoclasse.id)
+        }
       }
     }
   })
@@ -446,7 +521,7 @@ describe('archetipi', () => {
     for (const state of gamesOverSeeds(MANY, SETTINGS)) {
       for (const carta of Object.values(state.archetypesByPlayer)) {
         usciti.add(carta.classe.id)
-        usciti.add(carta.sottoclasse.id)
+        if (carta.sottoclasse) usciti.add(carta.sottoclasse.id)
       }
     }
     expect(usciti.size).toBe(ARCHETYPES.length)

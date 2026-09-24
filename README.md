@@ -111,6 +111,11 @@ Nessuno dei due riguarda il tono o il modo di pronunciare la parola: cantare o
 sussurrare fa ridere per due secondi e non cambia niente di quello che il tavolo deve
 capire.
 
+**Il Matto fa eccezione e gira da solo.** La sua carta ha `sottoclasse` a `null`
+(`vuoleSottoclasse` decide chi ne riceve una): dire che uno è libero da tutto e
+poi vincolargli le parole confonde e basta. Il nome della carta resta una parola
+sola, "il Matto", e sotto c'è un riquadro invece di due.
+
 **I nomi si attaccano.** Classe più sottoclasse devono suonare come un nome solo,
 perché è così che se ne parla dopo la partita: «mi è capitato il Testimone Poeta».
 Quindi ogni `name` è una parola sola, maschile e singolare, senza articolo;
@@ -125,12 +130,13 @@ partita e scrive sulla carta. Nel testo della regola sta il segnaposto `{bersagl
 modo da non prendere genere, perché il bersaglio può essere chiunque.
 
 `assignArchetypeCards` in `src/game/engine.ts` pesca da due mazzi mescolati, una classe
-e una sottoclasse a testa, senza bilanciamenti e senza tetti. Se i giocatori superano
+e una sottoclasse a testa (il Matto solo la classe), senza bilanciamenti e senza tetti. Se i giocatori superano
 gli archetipi di un mazzo, quel mazzo si rimescola e qualcuno può ripetersi.
 
 **Il cambio di carta.** Mentre legge la propria carta, ogni giocatore può rifiutarla una
 volta sola: `rerollArchetypes` ripesca classe, sottoclasse ed eventuale bersaglio, senza
-ridare quello che aveva né quello che ha già un altro. Il campo `rerolled` sulla carta
+ridare quello che aveva né quello che ha già un altro. Se esce il Matto la sottoclasse
+sparisce, e se il Matto se ne va la sottoclasse torna. Il campo `rerolled` sulla carta
 dice che il cambio è stato speso. La schermata richiude la carta e fa ripartire il
 tempo, perché quella nuova è tutta da leggere.
 

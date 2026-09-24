@@ -25,7 +25,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'matto',
     name: 'Matto',
     article: 'il',
-    rule: 'Nessuna regola, nemmeno la tua sottoclasse: fai quello che ti pare.',
+    rule: 'Nessuna regola e nessuna sottoclasse: fai quello che ti pare.',
     emoji: '🃏',
     kind: 'classe',
   },
@@ -238,6 +238,17 @@ export const CLASSI = ARCHETYPES.filter((archetype) => archetype.kind === 'class
 /** Le sottoclassi: vincolano le parole che puoi dire al tuo turno. */
 export const SOTTOCLASSI = ARCHETYPES.filter((archetype) => archetype.kind === 'sottoclasse')
 
+/**
+ * Il Matto è l'unica classe che gira senza sottoclasse: avere un vincolo sulle
+ * parole mentre la regola dice che sei libero confonde e basta.
+ */
+export const ID_MATTO = 'matto'
+
+/** Vero per le classi che vanno accompagnate da una sottoclasse. */
+export function vuoleSottoclasse(classe: Archetype): boolean {
+  return classe.id !== ID_MATTO
+}
+
 /** Il segnaposto che le classi con bersaglio usano nella regola. */
 export const SEGNAPOSTO_BERSAGLIO = '{bersaglio}'
 
@@ -250,8 +261,9 @@ export function archetypeRule(archetype: Archetype, targetName: string | null): 
   return archetype.rule.split(SEGNAPOSTO_BERSAGLIO).join(targetName ?? 'il giocatore indicato')
 }
 
-/** Il nome unico della carta: "Testimone Poeta". */
+/** Il nome unico della carta: "Testimone Poeta", o solo "Matto" quando è da solo. */
 export function archetypeCardName(card: ArchetypeCard): string {
+  if (!card.sottoclasse) return card.classe.name
   return `${card.classe.name} ${card.sottoclasse.name}`
 }
 
