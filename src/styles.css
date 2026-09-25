@@ -1269,3 +1269,15 @@ input[type='text']:focus {
     transform: none;
   }
 }
+
+/* Il promemoria al voto ripete tutta la carta: due voci separate da una riga
+   sottile, così la classe e la sottoclasse non si leggono come un blocco solo. */
+.promemoria-voce + .promemoria-voce {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.promemoria-voce .promemoria-nome {
+  flex-wrap: wrap;
+}

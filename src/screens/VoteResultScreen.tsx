@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { isImpostor, playerById } from '../game/engine'
+import { aliveImpostors, isImpostor, playerById } from '../game/engine'
 import type { GameState } from '../game/types'
 import { Avatar } from '../ui/Avatar'
 import { Screen, ScreenActions, ScreenBody } from '../ui/Screen'
@@ -22,6 +22,15 @@ export function VoteResultScreen({ state, onContinue }: Props) {
 
   const eliminato = outcome.eliminatedId ? playerById(state, outcome.eliminatedId) : null
   const eraImpostore = outcome.eliminatedId ? isImpostor(state, outcome.eliminatedId) : false
+  // Dire "sono ancora tutti in gioco" era falso appena uno era già stato preso:
+  // qui si contano quelli vivi adesso, con l'eliminato di questo voto già fuori.
+  const impostoriVivi = aliveImpostors(state).length
+  const restano =
+    impostoriVivi === state.impostorIds.length
+      ? 'Gli impostori sono ancora tutti in gioco.'
+      : impostoriVivi === 1
+        ? 'Resta un impostore in gioco.'
+        : `Restano ${impostoriVivi} impostori in gioco.`
   const votiMax = Math.max(1, ...Object.values(outcome.tally))
   const classifica = state.players
     .filter((player) => outcome.tally[player.id])
@@ -63,7 +72,7 @@ export function VoteResultScreen({ state, onContinue }: Props) {
                   <p className="muted">
                     {eraImpostore
                       ? 'Ora può tentare di indovinare la parola e ribaltare tutto.'
-                      : 'Gli impostori sono ancora tutti in gioco.'}
+                      : restano}
                   </p>
                 </>
               ) : (

@@ -152,7 +152,7 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
               <p className="archetipi-titolo">
                 <span className="archetipi-titolo-emoji" aria-hidden="true">
                   {role.archetypes.classe.emoji}
-                  {role.archetypes.sottoclasse.emoji}
+                  {role.archetypes.sottoclasse?.emoji}
                 </span>
                 {archetypeCardWithArticle(role.archetypes)}
               </p>
@@ -160,7 +160,8 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
                 Classe e sottoclasse non sono due voci di un elenco: servono in
                 momenti diversi della partita, la sottoclasse quando dici la tua
                 parola e la classe mentre si discute e si vota. Per questo hanno
-                bordo diverso e una didascalia che dice quando valgono.
+                bordo diverso e una didascalia che dice quando valgono. Il Matto
+                ha solo il primo riquadro: la sua carta non ha sottoclasse.
               */}
               <div className="arch-blocco arch-classe">
                 <p className="archetipo-nome">
@@ -175,19 +176,21 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
                   />
                 </p>
               </div>
-              <div className="arch-blocco arch-sottoclasse">
-                <p className="archetipo-nome">
-                  <span className="archetipo-emoji">{role.archetypes.sottoclasse.emoji}</span>
-                  {role.archetypes.sottoclasse.name}
-                  <span className="archetipo-ruolo">come dici la tua parola</span>
-                </p>
-                <p className="archetipo-regola">
-                  <RegolaArchetipo
-                    archetype={role.archetypes.sottoclasse}
-                    targetName={role.archetypes.targetName}
-                  />
-                </p>
-              </div>
+              {role.archetypes.sottoclasse && (
+                <div className="arch-blocco arch-sottoclasse">
+                  <p className="archetipo-nome">
+                    <span className="archetipo-emoji">{role.archetypes.sottoclasse.emoji}</span>
+                    {role.archetypes.sottoclasse.name}
+                    <span className="archetipo-ruolo">come dici la tua parola</span>
+                  </p>
+                  <p className="archetipo-regola">
+                    <RegolaArchetipo
+                      archetype={role.archetypes.sottoclasse}
+                      targetName={role.archetypes.targetName}
+                    />
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </SecretCard>
@@ -201,7 +204,7 @@ export function RevealScreen({ state, tieniPremuto, secondiCarta, onNext, onRero
         )}
         {puoProseguire ? (
           <button type="button" className="btn" onClick={chiudiEProsegui}>
-            {ultimo ? 'Ho capito, si comincia' : 'Ho capito, passa al prossimo'}
+            {ultimo ? 'Passa al turno delle parole' : 'Ho capito, passa al prossimo'}
           </button>
         ) : giaVisto ? (
           <p className="suggerimento">

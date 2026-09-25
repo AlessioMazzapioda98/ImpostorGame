@@ -1,4 +1,4 @@
-import { CLASSI, SOTTOCLASSI } from './archetypes'
+import { CLASSI, SOTTOCLASSI, vuoleSottoclasse } from './archetypes'
 import { MIN_PACKS_FOR_CLUE, WORD_PACKS } from './words'
 import type {
   Archetype,
@@ -156,7 +156,8 @@ function assignArchetypeCards(
     if (sottoclassi.length === 0) sottoclassi = shuffle(SOTTOCLASSI, rng)
 
     const classe = classi.pop() as Archetype
-    const sottoclasse = sottoclassi.pop() as Archetype
+    // Il Matto non pesca: la sua carta resta senza sottoclasse.
+    const sottoclasse = vuoleSottoclasse(classe) ? (sottoclassi.pop() as Archetype) : null
     cards[player.id] = {
       classe,
       sottoclasse,
@@ -176,11 +177,17 @@ function pickTargetName(players: Player[], playerId: PlayerId, rng: Rng): string
 }
 
 /** Fra i candidati, evita quelli già in mano ad altri e quello che hai adesso. */
-function pickDifferent(pool: Archetype[], attuale: Archetype, inUso: Set<string>, rng: Rng): Archetype {
-  const liberi = pool.filter((a) => a.id !== attuale.id && !inUso.has(a.id))
+function pickDifferent(
+  pool: Archetype[],
+  attuale: Archetype | null,
+  inUso: Set<string>,
+  rng: Rng,
+): Archetype {
+  const diversi = pool.filter((a) => a.id !== attuale?.id)
+  const liberi = diversi.filter((a) => !inUso.has(a.id))
   // A tavolo pieno può non restare niente di libero: allora basta che cambi.
-  const candidati = liberi.length > 0 ? liberi : pool.filter((a) => a.id !== attuale.id)
-  if (candidati.length === 0) return attuale
+  const candidati = liberi.length > 0 ? liberi : diversi
+  if (candidati.length === 0) return attuale as Archetype
   return candidati[Math.floor(rng() * candidati.length)]
 }
 
@@ -199,10 +206,15 @@ export function rerollArchetypes(
 
   const altrui = Object.entries(state.archetypesByPlayer).filter(([id]) => id !== playerId)
   const classiInUso = new Set(altrui.map(([, altra]) => altra.classe.id))
-  const sottoclassiInUso = new Set(altrui.map(([, altra]) => altra.sottoclasse.id))
+  const sottoclassiInUso = new Set(
+    altrui.flatMap(([, altra]) => (altra.sottoclasse ? [altra.sottoclasse.id] : [])),
+  )
 
   const classe = pickDifferent(CLASSI, card.classe, classiInUso, rng)
-  const sottoclasse = pickDifferent(SOTTOCLASSI, card.sottoclasse, sottoclassiInUso, rng)
+  // Chi si ritrova il Matto perde la sottoclasse, chi lo lascia se la ritrova.
+  const sottoclasse = vuoleSottoclasse(classe)
+    ? pickDifferent(SOTTOCLASSI, card.sottoclasse, sottoclassiInUso, rng)
+    : null
 
   return {
     ...state,

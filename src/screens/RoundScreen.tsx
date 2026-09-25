@@ -32,8 +32,15 @@ interface Props {
  * subito dopo. Il secondo cartellino invece porta fuori un giocatore e può
  * chiudere il giro, e dopo non ci sarebbe più uno schermo su cui rimediare,
  * quindi quello si chiede prima di darlo.
+ *
+ * Il giro non parte da solo. Chi arriva qui ha appena finito di guardare la
+ * carta o di votare, e spesso è l'ultimo a premere senza sapere di essere
+ * l'ultimo: se il conto del primo giocatore partisse subito, se lo mangerebbe
+ * il tempo del telefono che gira. Prima si vede l'ordine, poi si comincia.
  */
 export function RoundScreen({ state, onState, onVote }: Props) {
+  /** Finché non si preme "si comincia" il telefono sta ancora girando. */
+  const [iniziato, setIniziato] = useState(false)
   const [detti, setDetti] = useState(0)
   /** Chi ha già sforato in questo giro: non deve riprendere un cartellino. */
   const [sforati, setSforati] = useState<PlayerId[]>([])
@@ -58,6 +65,7 @@ export function RoundScreen({ state, onState, onVote }: Props) {
   // Al giro nuovo si riparte dal primo della lista, e i cartellini del giro
   // scorso non contano più per il tempo.
   useEffect(() => {
+    setIniziato(false)
     setDetti(0)
     setSforati([])
     setPerdonati([])
@@ -68,7 +76,7 @@ export function RoundScreen({ state, onState, onVote }: Props) {
   // La scadenza porta con sé di chi è, così il turno dopo non eredita per
   // sbaglio un conto già a zero.
   useEffect(() => {
-    if (!aTempo || !attuale || sforati.includes(attuale.id)) {
+    if (!iniziato || !aTempo || !attuale || sforati.includes(attuale.id)) {
       setScadenza(null)
       return
     }
@@ -77,7 +85,7 @@ export function RoundScreen({ state, onState, onVote }: Props) {
     // sforati non sta fra le dipendenze di proposito: quando ci si aggiunge
     // qualcuno il conto dev'essere già finito, non ripartire.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aTempo, secondi, attuale?.id, state.round])
+  }, [iniziato, aTempo, secondi, attuale?.id, state.round])
 
   useEffect(() => {
     if (!scadenza) return
@@ -147,6 +155,11 @@ export function RoundScreen({ state, onState, onVote }: Props) {
     setDetti((valore) => Math.max(valore - 1, 0))
   }
 
+  const comincia = () => {
+    vibra('conferma')
+    setIniziato(true)
+  }
+
   const vota = () => {
     vibra('conferma')
     onVote()
@@ -158,9 +171,14 @@ export function RoundScreen({ state, onState, onVote }: Props) {
         {attuale ? (
           <div className={haSforato ? 'turno-attuale turno-sforato' : 'turno-attuale'}>
             <Avatar nome={attuale.name} dimensione="lg" />
-            <p className="eyebrow">Tocca a</p>
+            <p className="eyebrow">{iniziato ? 'Tocca a' : 'Comincia'}</p>
             <h1 className="turno-nome">{attuale.name}</h1>
-            {aTempo && !haSforato ? (
+            {!iniziato ? (
+              <p className="muted">
+                Appoggiate il telefono in mezzo al tavolo. Il tempo parte quando premete
+                qui sotto.
+              </p>
+            ) : aTempo && !haSforato ? (
               <p className={secondiRimasti <= 5 ? 'conto-grosso conto-scarso' : 'conto-grosso'}>
                 {secondiRimasti}
               </p>
@@ -224,7 +242,11 @@ export function RoundScreen({ state, onState, onVote }: Props) {
       </ScreenBody>
 
       <ScreenActions>
-        {finito ? (
+        {!iniziato ? (
+          <button type="button" className="btn" onClick={comincia}>
+            Inizia il turno di {attuale?.name}
+          </button>
+        ) : finito ? (
           <button type="button" className="btn" onClick={vota}>
             Si vota
           </button>
